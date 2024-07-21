@@ -3035,7 +3035,6 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
-
 #if defined(DEV_BRANCH) && defined(USE_OLIVETTI)
     /* Has Olivetti KBC firmware. */
     {
