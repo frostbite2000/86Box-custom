@@ -2994,8 +2994,8 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
-    
-{
+    /* Has Chips & Technologies KBC firmware. */
+    {
         .name = "[ISA] Wells American A*Star ",
         .internal_name = "wellamerastar",
         .type = MACHINE_TYPE_286,
@@ -3023,8 +3023,8 @@ const machine_t machines[] = {
             .step = 512
         },
         .nvrmask = 63,
-        .kbc_device = &keyboard_at_device,
-        .kbc_params = 0x00000000,
+        .kbc_device = &keyboard_at_chips_device,
+        .kbc_params = 0x0000a600,
         .kbc_p1 = 0x000004f0,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
