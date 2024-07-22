@@ -233,6 +233,9 @@ enum {
     MACHINE_CHIPSET_INTEL_440GX,
     MACHINE_CHIPSET_OPTI_283,
     MACHINE_CHIPSET_OPTI_291,
+    MACHINE_CHIPSET_OPTI_381,
+    MACHINE_CHIPSET_OPTI_391,
+    MACHINE_CHIPSET_OPTI_481,
     MACHINE_CHIPSET_OPTI_493,
     MACHINE_CHIPSET_OPTI_495,
     MACHINE_CHIPSET_OPTI_499,
@@ -275,6 +278,7 @@ enum {
     MACHINE_CHIPSET_VLSI_VL82C481,
     MACHINE_CHIPSET_VLSI_VL82C486,
     MACHINE_CHIPSET_WD76C10,
+    MACHINE_CHIPSET_ZYMOS_POACH,
     MACHINE_CHIPSET_MAX
 };
 
@@ -499,6 +503,14 @@ extern int machine_at_pc916sx_init(const machine_t *);
 extern int machine_at_rycleopardlx_init(const machine_t *);
 
 /* m_at_386dx_486.c */
+/* Note to jriwanek: When merging this into my branch, please make
+   sure this appear here (and in the .c file) in the order and position
+   in which they appear in the machine table. */
+extern int machine_at_dataexpert386wb_init(const machine_t *);
+extern int machine_at_genoa486_init(const machine_t *);
+extern int machine_at_ga486l_init(const machine_t *);
+extern int machine_at_cougar_init(const machine_t *);
+
 /* 386DX */
 extern int machine_at_acc386_init(const machine_t *);
 extern int machine_at_ecs386_init(const machine_t *);
@@ -929,6 +941,7 @@ extern int machine_xt_v20xt_init(const machine_t *);
 
 extern int machine_xt_iskra3104_init(const machine_t *);
 extern int machine_xt_pravetz16_imko4_init(const machine_t *);
+extern int machine_xt_pravetz16s_cpu12p_init(const machine_t *);
 extern int machine_xt_micoms_xl7turbo_init(const machine_t *);
 
 /* m_xt_compaq.c */

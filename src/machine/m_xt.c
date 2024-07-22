@@ -25,7 +25,7 @@ extern const device_t vendex_xt_rtc_onboard_device;
 static void
 machine_xt_common_init(const machine_t *model, int fixed_floppy)
 {
-    if ((fdc_type == FDC_INTERNAL) || fixed_floppy)
+    if ((fdc_current[0] == FDC_INTERNAL) || fixed_floppy)
         device_add(&fdc_xt_device);
 
     machine_common_init(model);
@@ -358,6 +358,24 @@ machine_xt_pravetz16_imko4_init(const machine_t *model)
         return ret;
 
     device_add(&keyboard_pravetz_device);
+
+    machine_xt_common_init(model, 0);
+
+    return ret;
+}
+
+int
+machine_xt_pravetz16s_cpu12p_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/pravetz16s/PR16S.BIN",
+                           0x000fe000, 8192, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    device_add(&keyboard_xt_device);
 
     machine_xt_common_init(model, 0);
 

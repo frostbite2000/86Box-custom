@@ -785,7 +785,7 @@ machine_at_compaq_init(const machine_t *model, int type)
 {
     compaq_machine_type = type;
 
-    if (fdc_type == FDC_INTERNAL)
+    if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
 
     if (type < COMPAQ_PORTABLEIII386) {
@@ -804,7 +804,7 @@ machine_at_compaq_init(const machine_t *model, int type)
             break;
 
         case COMPAQ_PORTABLEIII:
-            if (hdc_current == HDC_INTERNAL)
+            if (hdc_current[0] == HDC_INTERNAL)
                 device_add(&ide_isa_device);
             if (gfxcard[0] == VID_INTERNAL)
                 device_add(&compaq_plasma_device);
@@ -812,7 +812,7 @@ machine_at_compaq_init(const machine_t *model, int type)
             break;
 
         case COMPAQ_PORTABLEIII386:
-            if (hdc_current == HDC_INTERNAL)
+            if (hdc_current[0] == HDC_INTERNAL)
                 device_add(&ide_isa_device);
             if (gfxcard[0] == VID_INTERNAL)
                 device_add(&compaq_plasma_device);

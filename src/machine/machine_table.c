@@ -130,6 +130,9 @@ const machine_filter_t machine_chipsets[] = {
     { "Intel 440GX",                MACHINE_CHIPSET_INTEL_440GX         },
     { "OPTi 283",                   MACHINE_CHIPSET_OPTI_283            },
     { "OPTi 291",                   MACHINE_CHIPSET_OPTI_291            },
+    { "OPTi 381",                   MACHINE_CHIPSET_OPTI_381            },
+    { "OPTi 391",                   MACHINE_CHIPSET_OPTI_391            },
+    { "OPTi 481",                   MACHINE_CHIPSET_OPTI_481            },
     { "OPTi 493",                   MACHINE_CHIPSET_OPTI_493            },
     { "OPTi 495",                   MACHINE_CHIPSET_OPTI_495            },
     { "OPTi 499",                   MACHINE_CHIPSET_OPTI_499            },
@@ -1362,6 +1365,45 @@ const machine_t machines[] = {
         .nvrmask = 0,
         .kbc_device = &keyboard_pravetz_device,
         .kbc_params = 0x00000000,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    {
+        .name = "[8088] Pravetz 16S / CPU12 Plus",
+        .internal_name = "pravetz16s",
+        .type = MACHINE_TYPE_8088,
+        .chipset = MACHINE_CHIPSET_DISCRETE,
+        .init = machine_xt_pravetz16s_cpu12p_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_8088,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 4772728,
+            .max_bus = 12000000,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_PC,
+        .flags = MACHINE_FLAGS_NONE,
+        .ram = {
+            .min = 512,
+            .max = 1024,
+            .step = 128
+        },
+        .nvrmask = 0,
+        .kbc_device = &keyboard_xt_device,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
@@ -3026,6 +3068,46 @@ const machine_t machines[] = {
         .kbc_device = &keyboard_at_chips_device,
         .kbc_params = 0x0000a600,
         .kbc_p1 = 0x000004f0,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    /* Has Chips & Technologies KBC firmware. */
+    {
+        .name = "[ISA] Wells American A*Star ",
+        .internal_name = "wellamerastar",
+        .type = MACHINE_TYPE_286,
+        .chipset = MACHINE_CHIPSET_DISCRETE,
+        .init = machine_at_wellamerastar_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_286,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 6000000,
+            .max_bus = 14000000,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags = MACHINE_FLAGS_NONE,
+        .ram = {
+            .min = 512,
+            .max = 1024,
+            .step = 512
+        },
+        .nvrmask = 63,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
         .device = NULL,
@@ -5405,6 +5487,46 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
+    /* Has AMIKey 'F' KBC firmware. */
+    {
+        .name = "[OPTi 391] DataExpert 386WB",
+        .internal_name = "dataexpert386wb",
+        .type = MACHINE_TYPE_386DX,
+        .chipset = MACHINE_CHIPSET_OPTI_391,
+        .init = machine_at_dataexpert386wb_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_386DX, /* Actual machine only supports 386DXes */
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 0,
+            .max_bus = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags = MACHINE_FLAGS_NONE,
+        .ram = {
+            .min = 1024,
+            .max = 32768,
+            .step = 1024
+        },
+        .nvrmask = 127,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
      /* The board has a "ASII KB-100" which I was not able to find any information about,
         but the BIOS sends commands C9 without a parameter and D5, both of which are
         Phoenix MultiKey commands. */
@@ -5743,6 +5865,86 @@ const machine_t machines[] = {
     },
 
     /* 486 machines - Socket 1 */
+    /* Has AMI KF KBC firmware. */
+    {
+        .name = "[ZyMOS Poach] Genoa Unknown 486",
+        .internal_name = "genoa486",
+        .type = MACHINE_TYPE_486,
+        .chipset = MACHINE_CHIPSET_ZYMOS_POACH,
+        .init = machine_at_genoa486_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKET1,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 0,
+            .max_bus = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags = MACHINE_APM,
+        .ram = {
+            .min = 1024,
+            .max = 65536,
+            .step = 1024
+        },
+        .nvrmask = 127,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    /* Has AMI KF KBC firmware. */
+    {
+        .name = "[OPTi 381] Gigabyte GA-486L",
+        .internal_name = "ga486l",
+        .type = MACHINE_TYPE_486,
+        .chipset = MACHINE_CHIPSET_OPTI_381,
+        .init = machine_at_ga486l_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKET1,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 0,
+            .max_bus = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags = MACHINE_APM,
+        .ram = {
+            .min = 1024,
+            .max = 16384,
+            .step = 1024
+        },
+        .nvrmask = 127,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
     /* Has JetKey V5.0 KBC Firmware which clones an AMI 'H'.
        The board was also seen 2003 with a -F string. */
     {
@@ -6402,6 +6604,46 @@ const machine_t machines[] = {
         .kbc_device = &keyboard_at_ami_device,
         .kbc_params = 0x00005000,
         .kbc_p1 = 0x000004f0,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    /* Has AMIKey-2 'H' KBC firmware. */
+    {
+        .name = "[OPTi 499] Alaris COUGAR 486BL",
+        .internal_name = "cougar",
+        .type = MACHINE_TYPE_486_S2,
+        .chipset = MACHINE_CHIPSET_OPTI_499,
+        .init = machine_at_cougar_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKET3,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 0,
+            .max_bus = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_VLB,
+        .flags = MACHINE_APM,
+        .ram = {
+            .min = 1024,
+            .max = 65536,
+            .step = 1024
+        },
+        .nvrmask = 127,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
         .device = NULL,
