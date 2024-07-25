@@ -179,6 +179,28 @@ machine_at_ecs386v_init(const machine_t *model)
 }
 
 int
+machine_at_dataexpert386wb_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/dataexpert386wb/st0386-wb-ver2-0-618f078c738cb397184464.bin",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    device_add(&opti391_device);
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
+int
 machine_at_opti495_init(const machine_t *model)
 {
     int ret;
@@ -291,6 +313,51 @@ machine_at_exp4349_init(const machine_t *model)
 }
 
 /* 486 Socket 1 */
+int
+machine_at_genoa486_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/genoa486/AMI486.BIO",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    device_add(&compaq_genoa_device);
+    device_add(&port_92_device);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
+int
+machine_at_ga486l_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/ga486l/ga-486l_bios.bin",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+    device_add(&opti381_device);
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
 static void
 machine_at_ali1429_common_init(const machine_t *model, int is_green)
 {
@@ -305,22 +372,6 @@ machine_at_ali1429_common_init(const machine_t *model, int is_green)
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
-}
-
-int
-machine_at_ali1429_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/ali1429/ami486.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_ali1429_common_init(model, 0);
-
-    return ret;
 }
 
 int
@@ -432,30 +483,6 @@ machine_at_av4_init(const machine_t *model)
     return ret;
 }
 
-/* TODO: Optional Acer/ALi M6357 power management chip and Adaptec AIC-6360 SCSI. */
-int
-machine_at_acerv10_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/acerv10/ALL.BIN",
-                           0x000e0000, 131072, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&sis_85c461_device);
-
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    device_add(&ali5105_device);
-    device_add(&ide_isa_device);
-
-    return ret;
-}
-
 static void
 machine_at_sis_85c471_common_init(const machine_t *model)
 {
@@ -465,25 +492,6 @@ machine_at_sis_85c471_common_init(const machine_t *model)
         device_add(&fdc_at_device);
 
     device_add(&sis_85c471_device);
-}
-
-int
-machine_at_px471_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/px471/SIS471A1.PHO",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_sis_85c471_common_init(model);
-    device_add(&ide_vlb_device);
-
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    return ret;
 }
 
 int
@@ -627,6 +635,22 @@ machine_at_winbios1429_init(const machine_t *model)
 }
 
 int
+machine_at_ali1429_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/ali1429/ami486.BIN",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_ali1429_common_init(model, 0);
+
+    return ret;
+}
+
+int
 machine_at_g486ip_init(const machine_t *model)
 {
     int ret;
@@ -648,6 +672,31 @@ machine_at_g486ip_init(const machine_t *model)
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 
     device_add(&ims8848_device);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
+int
+machine_at_cougar_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/cougar/COUGRMRB.BIN",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+    device_add(&ide_vlb_device);
+
+    device_add(&opti499_device);
+    device_add(&fdc37c665_ide_pri_device);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -884,6 +933,30 @@ machine_at_pb450_init(const machine_t *model)
     return ret;
 }
 
+/* TODO: Optional Acer/ALi M6357 power management chip and Adaptec AIC-6360 SCSI. */
+int
+machine_at_acerv10_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/acerv10/ALL.BIN",
+                           0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    device_add(&sis_85c461_device);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    device_add(&ali5105_device);
+    device_add(&ide_isa_device);
+
+    return ret;
+}
+
 int
 machine_at_win471_init(const machine_t *model)
 {
@@ -964,6 +1037,25 @@ machine_at_ami471_init(const machine_t *model)
         return ret;
 
     machine_at_sis_85c471_common_init(model);
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    return ret;
+}
+
+int
+machine_at_px471_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/px471/SIS471A1.PHO",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_sis_85c471_common_init(model);
+    device_add(&ide_vlb_device);
+
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 
     return ret;
@@ -2297,98 +2389,6 @@ machine_at_pcm5330_init(const machine_t *model)
     device_add(&keyboard_ps2_ami_pci_device);
     device_add(&stpc_atlas_device);
     device_add(&sst_flash_29ee020_device);
-
-    return ret;
-}
-
-int
-machine_at_dataexpert386wb_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/dataexpert386wb/st0386-wb-ver2-0-618f078c738cb397184464.bin",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&opti391_device);
-    device_add(&keyboard_at_ami_device);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
-
-    return ret;
-}
-
-int
-machine_at_genoa486_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/genoa486/AMI486.BIO",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&compaq_genoa_device);
-    device_add(&port_92_device);
-
-    device_add(&keyboard_at_ami_device);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
-
-    return ret;
-}
-
-int
-machine_at_ga486l_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/ga486l/ga-486l_bios.bin",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-    device_add(&opti381_device);
-    device_add(&keyboard_at_ami_device);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
-
-    return ret;
-}
-
-int
-machine_at_cougar_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/cougar/COUGRMRB.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-    device_add(&ide_vlb_device);
-
-    device_add(&opti499_device);
-    device_add(&fdc37c665_ide_pri_device);
-
-    device_add(&keyboard_at_ami_device);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
 
     return ret;
 }

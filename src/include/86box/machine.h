@@ -503,14 +503,6 @@ extern int machine_at_pc916sx_init(const machine_t *);
 extern int machine_at_rycleopardlx_init(const machine_t *);
 
 /* m_at_386dx_486.c */
-/* Note to jriwanek: When merging this into my branch, please make
-   sure this appear here (and in the .c file) in the order and position
-   in which they appear in the machine table. */
-extern int machine_at_dataexpert386wb_init(const machine_t *);
-extern int machine_at_genoa486_init(const machine_t *);
-extern int machine_at_ga486l_init(const machine_t *);
-extern int machine_at_cougar_init(const machine_t *);
-
 /* 386DX */
 extern int machine_at_acc386_init(const machine_t *);
 extern int machine_at_ecs386_init(const machine_t *);
@@ -518,6 +510,7 @@ extern int machine_at_spc6000a_init(const machine_t *);
 extern int machine_at_micronics386_init(const machine_t *);
 extern int machine_at_tandy4000_init(const machine_t *);
 extern int machine_at_ecs386v_init(const machine_t *);
+extern int machine_at_dataexpert386wb_init(const machine_t *);
 extern int machine_at_opti495_init(const machine_t *);
 extern int machine_at_asus386_init(const machine_t *);
 
@@ -527,14 +520,13 @@ extern int machine_at_opti495_mr_init(const machine_t *);
 extern int machine_at_exp4349_init(const machine_t *);
 
 /* 486 Socket 1 */
-extern int machine_at_ali1429_init(const machine_t *);
+extern int machine_at_genoa486_init(const machine_t *);
+extern int machine_at_ga486l_init(const machine_t *);
 extern int machine_at_cs4031_init(const machine_t *);
 extern int machine_at_mvi486_init(const machine_t *);
 extern int machine_at_isa486_init(const machine_t *);
 extern int machine_at_sis401_init(const machine_t *);
 extern int machine_at_av4_init(const machine_t *);
-extern int machine_at_acerv10_init(const machine_t *);
-extern int machine_at_px471_init(const machine_t *);
 extern int machine_at_486vchd_init(const machine_t *);
 extern int machine_at_vect486vl_init(const machine_t *);
 extern int machine_at_d824_init(const machine_t *);
@@ -543,7 +535,9 @@ extern int machine_at_d824_init(const machine_t *);
 extern int machine_at_pb410a_init(const machine_t *);
 extern int machine_at_acera1g_init(const machine_t *);
 extern int machine_at_winbios1429_init(const machine_t *);
+extern int machine_at_ali1429_init(const machine_t *);
 extern int machine_at_g486ip_init(const machine_t *);
+extern int machine_at_cougar_init(const machine_t *);
 extern int machine_at_decpclpv_init(const machine_t *);
 extern int machine_at_valuepoint433_init(const machine_t *);
 extern int machine_at_pci400ca_init(const machine_t *);
@@ -555,11 +549,13 @@ extern int machine_at_403tg_init(const machine_t *);
 extern int machine_at_403tg_d_init(const machine_t *);
 extern int machine_at_403tg_d_mr_init(const machine_t *);
 extern int machine_at_pb450_init(const machine_t *);
+extern int machine_at_acerv10_init(const machine_t *);
 extern int machine_at_win471_init(const machine_t *);
 extern int machine_at_vi15g_init(const machine_t *);
 extern int machine_at_vli486sv2g_init(const machine_t *);
 extern int machine_at_dtk486_init(const machine_t *);
 extern int machine_at_ami471_init(const machine_t *);
+extern int machine_at_px471_init(const machine_t *);
 extern int machine_at_tg486g_init(const machine_t *);
 extern int machine_at_dvent4xx_init(const machine_t *);
 extern int machine_at_ecsal486_init(const machine_t *);
