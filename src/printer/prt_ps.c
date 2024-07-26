@@ -440,6 +440,7 @@ ps_init(void *lpt)
     return dev;
 }
 
+#ifdef USE_PCL
 static void *
 pcl_init(void *lpt)
 {
@@ -488,6 +489,7 @@ pcl_init(void *lpt)
 
     return dev;
 }
+#endif
 
 static void
 ps_close(void *priv)
@@ -523,6 +525,7 @@ const lpt_device_t lpt_prt_ps_device = {
     .epp_request_read = NULL
 };
 
+#ifdef USE_PCL
 const lpt_device_t lpt_prt_pcl_device = {
     .name             = "Generic PCL5e Printer",
     .internal_name    = "pcl",
@@ -537,3 +540,4 @@ const lpt_device_t lpt_prt_pcl_device = {
     .epp_write_data   = NULL,
     .epp_request_read = NULL
 };
+#endif

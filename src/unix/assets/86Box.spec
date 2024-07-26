@@ -121,5 +121,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-* Sun Jul 14 2024 Robert de Rooy <robert.de.rooy[AT]gmail.com> 4.3-1
+* Fri Jul 26 2024 Robert de Rooy <robert.de.rooy[AT]gmail.com> 4.3-1
 - Bump release
