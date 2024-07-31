@@ -215,7 +215,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
     int send_prchg;
 
     /* The only command recognized in UART mode is 0xFF: Reset and return to Intelligent mode. */
-    if (mpu->mode == M_UART && (val != 0xff))
+    if (((mpu->mode == M_UART) || !mpu->intelligent) && (val != 0xff))
         return;
 
     if (mpu->state.reset) {
@@ -1287,7 +1287,8 @@ MPU401_InputMsg(void *priv, uint8_t *msg, uint32_t len)
         return;
     }
 
-    if (mpu->mode == M_INTELLIGENT) {
+    if (mpu->intelligent || mpu->mode == M_INTELLIGENT) {
+        pclog("Intelligent mode input.\n");
         if (msg[0] < 0x80) {
             /* Expand running status */
             msg[2] = msg[1];
