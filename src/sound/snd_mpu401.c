@@ -139,7 +139,7 @@ MPU401_QueueByte(mpu_t *mpu, uint8_t data)
         mpu->state.block_ack = 0;
         return;
     }
-    if (!mpu->queue_used) {
+    if (!mpu->queue_used && mpu->intelligent) {
         mpu->state.irq_pending = 1;
         MPU401_UpdateIRQ(mpu, 1);
     }
@@ -565,8 +565,11 @@ MPU401_ReadData(mpu_t *mpu)
         mpu->queue_pos++;
         mpu->queue_used--;
     }
-    if (!mpu->intelligent || (mpu->mode == M_UART))
+    if (!mpu->intelligent)
         return ret;
+
+    if (!mpu->queue_used)
+        MPU401_UpdateIRQ(mpu, 0);
 
     /*copy from recording buffer*/
 	if (mpu->state.rec_copy && !mpu->rec_queue_used) {
@@ -574,9 +577,6 @@ MPU401_ReadData(mpu_t *mpu)
 		MPU401_EOIHandler(mpu);
 		return ret;
 	}
-
-    if (!mpu->queue_used)
-        MPU401_UpdateIRQ(mpu, 0);
 
     if ((ret >= 0xf0) && (ret <= 0xf7)) { /* MIDI data request */
         mpu->state.track      = ret & 7;
@@ -643,9 +643,6 @@ MPU401_WriteData(mpu_t *mpu, uint8_t val)
             return;
         case 0xe7: /* Set internal clock to host interval */
             mpu->state.command_byte = 0;
-			if (!val)
-                val = 64;
-
 			for (uint8_t i = 0; i < 4; i++)
                 mpu->clock.cth_rate[i] = (val >> 2) + cth_data[((val & 3) << 2) + i];
 
@@ -1288,6 +1285,8 @@ MPU401_InputMsg(void *priv, uint8_t *msg, uint32_t len)
         return;
     }
 
+    pclog("InputMsg.\n");
+
     if (mpu->intelligent && mpu->mode == M_INTELLIGENT) {
         pclog("Intelligent mode input.\n");
         if (msg[0] < 0x80) {
@@ -1481,9 +1480,6 @@ MPU401_InputMsg(void *priv, uint8_t *msg, uint32_t len)
     /* UART mode input. */
     for (uint32_t i = 0; i < len; i++)
         MPU401_QueueByte(mpu, msg[i]);
-
-    pclog("MPU401:Input Msg.\n");
-    return;
 }
 
 void
