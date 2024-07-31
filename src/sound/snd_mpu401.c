@@ -323,12 +323,12 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
                 break;
         }
         MPU401_QueueByte(mpu, MSG_MPU_ACK);
-		/*record counter hack: needed by Prism, but sent only on cmd 0x20/0x26 (or breaks Ballade)*/
-		uint8_t rec_cnt = mpu->clock.rec_counter;
-		if (((val==0x20) || (val==0x26)) && (mpu->state.rec == M_RECON))
-			MPU401_RecQueueBuffer(mpu, &rec_cnt, 1);
+        /*record counter hack: needed by Prism, but sent only on cmd 0x20/0x26 (or breaks Ballade)*/
+        uint8_t rec_cnt = mpu->clock.rec_counter;
+        if (((val==0x20) || (val==0x26)) && (mpu->state.rec == M_RECON))
+            MPU401_RecQueueBuffer(mpu, &rec_cnt, 1);
 
-		if (send_prchg) {
+        if (send_prchg) {
             for (uint8_t i = 0; i < 16; i++) {
                 if (mpu->filter.prchg_mask&(1<<i)) {
                     uint8_t recmsg[3] = { mpu->clock.rec_counter, 0xc0 | i, mpu->filter.prchg_buf[i] };
@@ -336,7 +336,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
                     mpu->filter.prchg_mask &= ~(1 << i);
                 }
             }
-		}
+        }
         return;
     } else if ((val >= 0xa0) && (val <= 0xa7)) { /* Request play counter */
         if (mpu->state.cmask & (1 << (val & 7)))
@@ -545,6 +545,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
             case 0x3f: /* UART mode */
                 pclog("MPU-401:Set UART mode %u\n", val);
                 mpu->mode = M_UART;
+
                 break;
             default:;
                 // pclog("MPU-401:Unhandled command %X",val);
