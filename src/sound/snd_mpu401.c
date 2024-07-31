@@ -139,7 +139,7 @@ MPU401_QueueByte(mpu_t *mpu, uint8_t data)
         mpu->state.block_ack = 0;
         return;
     }
-    if (!mpu->queue_used && mpu->intelligent) {
+    if (!mpu->queue_used) {
         mpu->state.irq_pending = 1;
         MPU401_UpdateIRQ(mpu, 1);
     }
@@ -215,7 +215,7 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
     int send_prchg;
 
     /* The only command recognized in UART mode is 0xFF: Reset and return to Intelligent mode. */
-    if (((mpu->mode == M_UART) || !mpu->intelligent) && (val != 0xff))
+    if ((val != 0xff) && (mpu->mode == M_UART))
         return;
 
     if (mpu->state.reset) {
@@ -565,7 +565,7 @@ MPU401_ReadData(mpu_t *mpu)
         mpu->queue_pos++;
         mpu->queue_used--;
     }
-    if (!mpu->intelligent)
+    if (!mpu->intelligent || (mpu->mode == M_UART))
         return ret;
 
     /*copy from recording buffer*/
@@ -607,7 +607,7 @@ MPU401_ReadData(mpu_t *mpu)
 static void
 MPU401_WriteData(mpu_t *mpu, uint8_t val)
 {
-    if (mpu->mode == M_UART) {
+    if (!mpu->intelligent || (mpu->mode == M_UART)) {
         midi_raw_out_byte(val);
 
         if (val == 0xff)
@@ -1224,8 +1224,9 @@ MPU401_InputSysex(void *priv, uint8_t *buffer, uint32_t len, int abort)
     mpu_t  *mpu    = (mpu_t *) priv;
     uint8_t val_ff = 0xff;
 
-    if (mpu->mode == M_UART) {
+    if ((mpu->mode == M_UART) || !mpu->intelligent) {
         /* UART mode input. */
+        pclog("UART mode input sysex.\n");
         for (uint32_t i = 0; i < len; i++)
             MPU401_QueueByte(mpu, buffer[i]);
         return 0;
@@ -1283,11 +1284,11 @@ MPU401_InputMsg(void *priv, uint8_t *msg, uint32_t len)
 
     /* Abort if sysex transfer is in progress. */
     if (!mpu->state.sysex_in_finished) {
-        mpu401_log("SYSEX in progress\n");
+        pclog("SYSEX in progress\n");
         return;
     }
 
-    if (mpu->intelligent || mpu->mode == M_INTELLIGENT) {
+    if (mpu->intelligent && mpu->mode == M_INTELLIGENT) {
         pclog("Intelligent mode input.\n");
         if (msg[0] < 0x80) {
             /* Expand running status */
