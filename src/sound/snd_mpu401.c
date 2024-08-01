@@ -59,8 +59,6 @@ static __inline void MPU401_NotesOff(mpu_t *mpu, unsigned int i);
 
 static void MPU401_Reset(mpu_t *mpu);
 
-#define ENABLE_MPU401_LOG 1
-
 #ifdef ENABLE_MPU401_LOG
 int mpu401_do_log = ENABLE_MPU401_LOG;
 
@@ -362,8 +360,6 @@ static void
 MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
 {
     int send_prchg;
-
-    mpu401_log("WriteCommand: MIDI IN=%x.\n", mpu->midi_in);
 
     /* The only command recognized in UART mode is 0xFF: Reset and return to Intelligent mode. */
     if ((val != 0xff) && (mpu->mode == M_UART))
@@ -707,7 +703,8 @@ MPU401_WriteCommand(mpu_t *mpu, uint8_t val)
                 mpu->mode = M_UART;
                 break;
             default:;
-                // pclog("MPU-401:Unhandled command %X",val);
+                mpu401_log("MPU-401:Unhandled command %X",val);
+                break;
        }
     }
     MPU401_QueueByte(mpu, MSG_MPU_ACK);
@@ -728,16 +725,30 @@ MPU401_ReadData(mpu_t *mpu)
     if (!mpu->intelligent)
         return ret;
 
-    pclog("QueueUsed=%d.\n", mpu->queue_used);
+    mpu401_log("QueueUsed=%d.\n", mpu->queue_used);
     if (!mpu->queue_used)
         MPU401_UpdateIRQ(mpu, 0);
 
-    /*copy from recording buffer*/
-	if (mpu->state.rec_copy && !mpu->rec_queue_used) {
-		mpu->state.rec_copy = 0;
-		MPU401_EOIHandler(mpu);
-		return ret;
-	}
+    if (mpu->state.rec_copy && !mpu->rec_queue_used) {
+        mpu->state.rec_copy = 0;
+        MPU401_EOIHandler(mpu);
+        return ret;
+    }
+
+    /* Copy from recording buffer. */
+    if (!mpu->queue_used && mpu->rec_queue_used) {
+        mpu->state.rec_copy = 1;
+        if (mpu->rec_queue_pos >= MPU401_INPUT_QUEUE)
+            mpu->rec_queue_pos -= MPU401_INPUT_QUEUE;
+
+        MPU401_QueueByte(mpu, mpu->rec_queue[mpu->rec_queue_pos]);
+        mpu->rec_queue_pos++;
+        mpu->rec_queue_used--;
+    }
+
+    MPU401_UpdateIRQ(mpu, 0);
+    if (mpu->queue_used)
+        MPU401_UpdateIRQ(mpu, 1);
 
     if ((ret >= 0xf0) && (ret <= 0xf7)) { /* MIDI data request */
         mpu->state.track      = ret & 7;
