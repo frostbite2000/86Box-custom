@@ -95,10 +95,13 @@ extern const device_t prime3b_ide_device;
 extern const device_t prime3c_device;
 extern const device_t prime3c_ide_device;
 
+/* IBM PS/1 */
+extern const device_t ps1_m2133_sio;
+
 /* Super I/O Detect */
-#if defined(DEV_BRANCH) && defined(USE_SIO_DETECT)
+#ifdef USE_SIO_DETECT
 extern const device_t sio_detect_device;
-#endif
+#endif /* USE_SIO_DETECT */
 
 /* UMC */
 extern const device_t um8663af_device;

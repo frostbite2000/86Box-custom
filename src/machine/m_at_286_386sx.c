@@ -998,7 +998,7 @@ machine_at_pc916sx_init(const machine_t *model)
     return ret;
 }
 
-#if defined(DEV_BRANCH) && defined(USE_OLIVETTI)
+#ifdef USE_OLIVETTI
 int
 machine_at_m290_init(const machine_t *model)
 {
@@ -1021,26 +1021,4 @@ machine_at_m290_init(const machine_t *model)
 
     return ret;
 }
-#endif
-
-int
-machine_at_rycleopardlx_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/rycleopardlx/486-RYC-Leopard-LX.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&opti283_device);
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
-
-    return ret;
-}
+#endif /* USE_OLIVETTI */
