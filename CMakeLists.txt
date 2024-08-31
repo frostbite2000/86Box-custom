@@ -35,11 +35,7 @@ if(MUNT_EXTERNAL)
 endif()
 
 project(86Box
-<<<<<<< HEAD
     VERSION 4.3
-=======
-    VERSION 4.3
->>>>>>> origin/master
     DESCRIPTION "Emulator of x86-based systems"
     HOMEPAGE_URL "https://86box.net"
     LANGUAGES C CXX)
