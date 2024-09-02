@@ -110,7 +110,7 @@ typedef struct lpt_port_t {
     pc_timer_t    fifo_out_timer;
 } lpt_port_t;
 
-enum {
+typedef enum {
     LPT_STATE_IDLE = 0,
     LPT_STATE_READ_DMA,
     LPT_STATE_WRITE_FIFO
