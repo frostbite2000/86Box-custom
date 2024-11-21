@@ -87,7 +87,7 @@ uint8_t scsi_cdrom_command_flags[0x100] = {
     IMPLEMENTED | CHECK_READY | SCSI_ONLY,           /* 0x22*/
     0, 0,                                            /* 0x23-0x24 */
     IMPLEMENTED | CHECK_READY,                       /* 0x25 */
-    IMPLEMENTED | CHECK_READY | SCSI_ONLY,           /* 0x26 */
+    0,                                               /* 0x26 */
     0,                                               /* 0x27 */
     IMPLEMENTED | CHECK_READY,                       /* 0x28 */
     0, 0,                                            /* 0x29-0x2A */
@@ -564,10 +564,12 @@ scsi_cdrom_get_channel(void *priv, int channel)
 
     switch (dev->drv->type) {
         case CDROM_TYPE_DEC_RRD45_0436:
+        case CDROM_TYPE_ShinaKen_DM3x1S_104:
         case CDROM_TYPE_SONY_CDU541_10i:
         case CDROM_TYPE_SONY_CDU561_18k:
         case CDROM_TYPE_SONY_CDU76S_100:
-        case CDROM_TYPE_TEXEL_DMXX24_100:
+        case CDROM_TYPE_TEXEL_DM3024_100:
+        case CDROM_TYPE_TEXEL_DM3028_106:
             ret = dev->ms_pages_saved_sony.pages[dev->sony_vendor ? GPMODE_CDROM_AUDIO_PAGE_SONY : GPMODE_CDROM_AUDIO_PAGE][channel ? 10 : 8];
             break;
         default:
@@ -589,10 +591,12 @@ scsi_cdrom_get_volume(void *priv, int channel)
 
     switch (dev->drv->type) {
         case CDROM_TYPE_DEC_RRD45_0436:
+        case CDROM_TYPE_ShinaKen_DM3x1S_104:
         case CDROM_TYPE_SONY_CDU541_10i:
         case CDROM_TYPE_SONY_CDU561_18k:
         case CDROM_TYPE_SONY_CDU76S_100:
-        case CDROM_TYPE_TEXEL_DMXX24_100:
+        case CDROM_TYPE_TEXEL_DM3024_100:
+        case CDROM_TYPE_TEXEL_DM3028_106:
             ret = dev->ms_pages_saved_sony.pages[dev->sony_vendor ? GPMODE_CDROM_AUDIO_PAGE_SONY :
                                                  GPMODE_CDROM_AUDIO_PAGE][channel ? 11 : 9];
             break;
@@ -612,10 +616,12 @@ scsi_cdrom_mode_sense_load(scsi_cdrom_t *dev)
 
     switch (dev->drv->type) {
         case CDROM_TYPE_DEC_RRD45_0436:
+        case CDROM_TYPE_ShinaKen_DM3x1S_104:
         case CDROM_TYPE_SONY_CDU541_10i:
         case CDROM_TYPE_SONY_CDU561_18k:
         case CDROM_TYPE_SONY_CDU76S_100:
-        case CDROM_TYPE_TEXEL_DMXX24_100:
+        case CDROM_TYPE_TEXEL_DM3024_100:
+        case CDROM_TYPE_TEXEL_DM3028_106:
             memset(&dev->ms_pages_saved_sony, 0, sizeof(mode_sense_pages_t));
             memcpy(&dev->ms_pages_saved_sony, &scsi_cdrom_mode_sense_pages_default_sony_scsi,
                    sizeof(mode_sense_pages_t));
@@ -664,10 +670,12 @@ scsi_cdrom_mode_sense_save(scsi_cdrom_t *dev)
 
     switch (dev->drv->type) {
         case CDROM_TYPE_DEC_RRD45_0436:
+        case CDROM_TYPE_ShinaKen_DM3x1S_104:
         case CDROM_TYPE_SONY_CDU541_10i:
         case CDROM_TYPE_SONY_CDU561_18k:
         case CDROM_TYPE_SONY_CDU76S_100:
-        case CDROM_TYPE_TEXEL_DMXX24_100:
+        case CDROM_TYPE_TEXEL_DM3024_100:
+        case CDROM_TYPE_TEXEL_DM3028_106:
             sprintf(file_name, "scsi_cdrom_%02i_mode_sense_sony_bin", dev->id);
             fp = plat_fopen(nvr_path(file_name), "wb");
             if (fp) {
@@ -747,10 +755,12 @@ scsi_cdrom_mode_sense_read(scsi_cdrom_t *dev, uint8_t page_control, uint8_t page
 {
     switch (dev->drv->type) {
         case CDROM_TYPE_DEC_RRD45_0436:
+        case CDROM_TYPE_ShinaKen_DM3x1S_104:
         case CDROM_TYPE_SONY_CDU541_10i:
         case CDROM_TYPE_SONY_CDU561_18k:
         case CDROM_TYPE_SONY_CDU76S_100:
-        case CDROM_TYPE_TEXEL_DMXX24_100:
+        case CDROM_TYPE_TEXEL_DM3024_100:
+        case CDROM_TYPE_TEXEL_DM3028_106:
             switch (page_control) {
                 case 0:
                 case 3:
@@ -1008,10 +1018,12 @@ scsi_cdrom_command_common(scsi_cdrom_t *dev)
             case 0xc0:
                 switch (dev->drv->type) {
                     case CDROM_TYPE_DEC_RRD45_0436:
+                    case CDROM_TYPE_ShinaKen_DM3x1S_104:
                     case CDROM_TYPE_SONY_CDU541_10i:
                     case CDROM_TYPE_SONY_CDU561_18k:
                     case CDROM_TYPE_SONY_CDU76S_100:
-                    case CDROM_TYPE_TEXEL_DMXX24_100:
+                    case CDROM_TYPE_TEXEL_DM3024_100:
+                    case CDROM_TYPE_TEXEL_DM3028_106:
                         /* 44100 * 16 bits * 2 channels = 176400 bytes per second */
                         bytes_per_second = 176400.0;
                         bytes_per_second *= (double) dev->drv->cur_speed;
@@ -1020,11 +1032,13 @@ scsi_cdrom_command_common(scsi_cdrom_t *dev)
             case 0xc1:
                 switch (dev->drv->type) {
                     case CDROM_TYPE_DEC_RRD45_0436:
+                    case CDROM_TYPE_ShinaKen_DM3x1S_104:
                     case CDROM_TYPE_SONY_CDU541_10i:
                     case CDROM_TYPE_SONY_CDU561_18k:
                     case CDROM_TYPE_SONY_CDU76S_100:
                     case CDROM_TYPE_PIONEER_DRM604X_2403:
-                    case CDROM_TYPE_TEXEL_DMXX24_100:
+                    case CDROM_TYPE_TEXEL_DM3024_100:
+                    case CDROM_TYPE_TEXEL_DM3028_106:
                         /* 44100 * 16 bits * 2 channels = 176400 bytes per second */
                         bytes_per_second = 176400.0;
                         bytes_per_second *= (double) dev->drv->cur_speed;
@@ -1033,11 +1047,13 @@ scsi_cdrom_command_common(scsi_cdrom_t *dev)
             case 0xc2 ... 0xc3:
                 switch (dev->drv->type) {
                     case CDROM_TYPE_DEC_RRD45_0436:
+                    case CDROM_TYPE_ShinaKen_DM3x1S_104:
                     case CDROM_TYPE_SONY_CDU541_10i:
                     case CDROM_TYPE_SONY_CDU561_18k:
                     case CDROM_TYPE_SONY_CDU76S_100:
                     case CDROM_TYPE_PIONEER_DRM604X_2403:
-                    case CDROM_TYPE_TEXEL_DMXX24_100:
+                    case CDROM_TYPE_TEXEL_DM3024_100:
+                    case CDROM_TYPE_TEXEL_DM3028_106:
                         if (dev->current_cdb[0] == 0xc2)
                             dev->callback += 40.0;
                         /* 44100 * 16 bits * 2 channels = 176400 bytes per second */
@@ -1583,10 +1599,12 @@ scsi_command_check_ready(scsi_cdrom_t *dev, uint8_t *cdb)
                 ret = 1;
                 break;
             case CDROM_TYPE_DEC_RRD45_0436:
+            case CDROM_TYPE_ShinaKen_DM3x1S_104:
             case CDROM_TYPE_SONY_CDU541_10i:
             case CDROM_TYPE_SONY_CDU561_18k:
             case CDROM_TYPE_SONY_CDU76S_100:
-            case CDROM_TYPE_TEXEL_DMXX24_100:
+            case CDROM_TYPE_TEXEL_DM3024_100:
+            case CDROM_TYPE_TEXEL_DM3028_106:
                 if (cdb[0] == 0xC0)
                     break;
                 ret = 1;
@@ -1855,16 +1873,13 @@ scsi_cdrom_command(scsi_common_t *sc, uint8_t *cdb)
     memcpy(dev->current_cdb, cdb, 12);
     dev->sony_vendor = 0;
 
-    // if (cdb[0] != 0) {
-        scsi_cdrom_log("CD-ROM %i: Command 0x%02X, Sense Key %02X, Asc %02X, Ascq %02X, Unit attention: %i\n",
-                       dev->id, cdb[0], scsi_cdrom_sense_key, scsi_cdrom_asc, scsi_cdrom_ascq,
+    if (cdb[0] != 0) {
+        pclog("CD-ROM %i: CDB: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X, Sense Key %02X, Asc %02X, Ascq %02X, Unit attention: %i\n",
+                       dev->id, cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5], cdb[6], cdb[7],
+                       cdb[8], cdb[9], cdb[10], cdb[11], scsi_cdrom_sense_key, scsi_cdrom_asc, scsi_cdrom_ascq,
                        dev->unit_attention);
         scsi_cdrom_log("CD-ROM %i: Request length: %04X\n", dev->id, dev->tf->request_length);
-
-        scsi_cdrom_log("CD-ROM %i: CDB: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-                       dev->id, cdb[0], cdb[1], cdb[2], cdb[3], cdb[4], cdb[5], cdb[6], cdb[7],
-                       cdb[8], cdb[9], cdb[10], cdb[11]);
-    // }
+    }
 
     msf             = cdb[1] & 2;
     dev->sector_len = 0;
@@ -2018,10 +2033,12 @@ begin:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PLAY_MSF_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PLAY_MSF_SONY*/
                     cdb[0] = GPCMD_PLAY_AUDIO_MSF;
                     dev->current_cdb[0] = cdb[0];
                     dev->sony_vendor    = 1;
@@ -2109,19 +2126,21 @@ begin:
                     if (dev->sector_len == 0)
                         dev->sector_len = 256; /* For READ (6) and WRITE (6), a length of 0 indicates a transfer of 256 sector. */
                     dev->sector_pos = ((((uint32_t) cdb[1]) & 0x1f) << 16) | (((uint32_t) cdb[2]) << 8) | ((uint32_t) cdb[3]);
+                    scsi_cdrom_log("Read 6: CD-ROM %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len,
+                                   dev->sector_pos);
                     msf             = 0;
                     break;
                 case GPCMD_READ_10:
                     dev->sector_len = (cdb[7] << 8) | cdb[8];
                     dev->sector_pos = (cdb[2] << 24) | (cdb[3] << 16) | (cdb[4] << 8) | cdb[5];
-                    scsi_cdrom_log("CD-ROM %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len,
+                    scsi_cdrom_log("Read 10: CD-ROM %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len,
                                    dev->sector_pos);
                     msf = 0;
                     break;
                 case GPCMD_READ_12:
                     dev->sector_len = (((uint32_t) cdb[6]) << 24) | (((uint32_t) cdb[7]) << 16) | (((uint32_t) cdb[8]) << 8) | ((uint32_t) cdb[9]);
                     dev->sector_pos = (((uint32_t) cdb[2]) << 24) | (((uint32_t) cdb[3]) << 16) | (((uint32_t) cdb[4]) << 8) | ((uint32_t) cdb[5]);
-                    scsi_cdrom_log("CD-ROM %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len,
+                    scsi_cdrom_log("Read 12: CD-ROM %i: Length: %i, LBA: %i\n", dev->id, dev->sector_len,
                                    dev->sector_pos);
                     msf = 0;
                     break;
@@ -2286,10 +2305,12 @@ begin:
 
             switch (dev->drv->type) {
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100:
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106:
                     if (!(scsi_cdrom_mode_sense_page_flags_sony & (1LL << (uint64_t) (cdb[2] & 0x3f)))) {
                         scsi_cdrom_invalid_field(dev);
                         scsi_cdrom_buf_free(dev);
@@ -2341,7 +2362,7 @@ begin:
                 }
             }
 
-            scsi_cdrom_set_buf_len(dev, BufLen, &len);
+            scsi_cdrom_set_buf_len(dev, BufLen, &alloc_length);
 
             scsi_cdrom_log("CD-ROM %i: Reading mode page: %02X...\n", dev->id, cdb[2]);
 
@@ -2668,17 +2689,19 @@ begin:
         case 0xC0:
             switch (dev->drv->type) {
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_SET_ADDRESS_FORMAT_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_SET_ADDRESS_FORMAT_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
                     dev->sony_vendor    = 1;
                     dev->drv->sony_msf = cdb[8] & 1;
                     scsi_cdrom_command_complete(dev);
                     break;
                 case CDROM_TYPE_PIONEER_DRM604X_2403: /*GPCMD_MAGAZINE_EJECT_PIONEER*/
-                case CDROM_TYPE_CHINON_CDS431_H42: /*GPCMD_EJECT_CHINON*/
+                case CDROM_TYPE_CHINON_CDX435_M62: /*GPCMD_EJECT_CHINON*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
                     scsi_cdrom_stop(sc);
                     cdrom_eject(dev->id);
@@ -2740,12 +2763,14 @@ begin:
         case 0xC1:
             switch (dev->drv->type) {
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_READ_TOC_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_READ_TOC_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_DATA_IN);
-                    msf              = dev->ms_pages_saved_sony.pages[GPMODE_CDROM_PAGE_SONY][2] & 0x01;
+                    msf              = dev->drv->sony_msf;
                     dev->sony_vendor = 1;
 
                     max_len = cdb[7];
@@ -2759,7 +2784,7 @@ begin:
                         return;
                     }
 
-                    len = cdrom_read_toc_sony(dev->drv, dev->buffer, cdb[5], msf || dev->drv->sony_msf, max_len);
+                    len = cdrom_read_toc_sony(dev->drv, dev->buffer, cdb[5], msf, max_len);
                     if (len == -1) {
                         /* If the returned length is -1, this means cdrom_read_toc_sony() has encountered an error. */
                         scsi_cdrom_invalid_field(dev);
@@ -2973,13 +2998,13 @@ begin:
                         dev->buffer[1] = 0x11;
                         break;
                     case CD_STATUS_PAUSED:
-                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDS431_H42) ? 0x15 : 0x12;
+                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDX435_M62) ? 0x15 : 0x12;
                         break;
                     case CD_STATUS_DATA_ONLY:
-                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDS431_H42) ? 0x00 : 0x15;
+                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDX435_M62) ? 0x00 : 0x15;
                         break;
                     default:
-                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDS431_H42) ? 0x00 : 0x13;
+                        dev->buffer[1] = (dev->drv->type == CDROM_TYPE_CHINON_CDX435_M62) ? 0x00 : 0x13;
                         break;
                 }
 
@@ -2995,10 +3020,12 @@ begin:
         case 0xC6:
             switch (dev->drv->type) {
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PLAY_TRACK_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PLAY_TRACK_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
                     dev->sony_vendor = 1;
 
@@ -3022,7 +3049,7 @@ begin:
                     else
                         scsi_cdrom_illegal_mode(dev);
                     break;
-                case CDROM_TYPE_CHINON_CDS431_H42: /*GPCMD_STOP_CHINON*/
+                case CDROM_TYPE_CHINON_CDX435_M62: /*GPCMD_STOP_CHINON*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
                     scsi_cdrom_stop(sc);
                     scsi_cdrom_command_complete(dev);
@@ -3147,16 +3174,6 @@ begin:
             }
             break;
 
-        case 0x26:
-            if (dev->drv->type == CDROM_TYPE_CHINON_CDS431_H42) { /*GPCMD_UNKNOWN_CHINON*/
-                scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
-                scsi_cdrom_stop(sc);
-                scsi_cdrom_command_complete(dev);
-            } else {
-                scsi_cdrom_illegal_opcode(dev);
-            }
-            break;
-
         case GPCMD_START_STOP_UNIT:
             scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
 
@@ -3191,17 +3208,19 @@ begin:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PLAYBACK_STATUS_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PLAYBACK_STATUS_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_DATA_IN);
                     dev->sony_vendor = 1;
 
                     max_len = cdb[7];
                     max_len <<= 8;
                     max_len |= cdb[8];
-                    msf = dev->ms_pages_saved_sony.pages[GPMODE_CDROM_PAGE_SONY][2] & 0x01;
+                    msf = dev->drv->sony_msf;
 
                     scsi_cdrom_buf_alloc(dev, 18);
 
@@ -3212,7 +3231,7 @@ begin:
                     dev->buffer[1] = 0x00;                                                        /*Reserved*/
                     dev->buffer[2] = 0x00;                                                        /*Audio Status data length*/
                     dev->buffer[3] = 0x00;                                                        /*Audio Status data length*/
-                    dev->buffer[4] = cdrom_get_audio_status_sony(dev->drv, &dev->buffer[6], msf || dev->drv->sony_msf); /*Audio status*/
+                    dev->buffer[4] = cdrom_get_audio_status_sony(dev->drv, &dev->buffer[6], msf); /*Audio status*/
                     dev->buffer[5] = 0x00;
 
                     scsi_cdrom_log("Audio Status = %02x\n", dev->buffer[4]);
@@ -3339,23 +3358,22 @@ begin:
                 if (dev->drv->bus_type == CDROM_BUS_SCSI) {
                     dev->buffer[3] = 0x02;
                     switch (dev->drv->type) {
-                        case CDROM_TYPE_CHINON_CDS431_H42:
+                        case CDROM_TYPE_CHINON_CDX435_M62:
                         case CDROM_TYPE_DEC_RRD45_0436:
                         case CDROM_TYPE_MATSHITA_501_10b:
+                        case CDROM_TYPE_ShinaKen_DM3x1S_104:
                         case CDROM_TYPE_SONY_CDU541_10i:
-                        case CDROM_TYPE_SONY_CDU76S_100:
-                        case CDROM_TYPE_TEAC_CD50_100:
-                        case CDROM_TYPE_TEAC_R55S_10R:
-                        case CDROM_TYPE_TEXEL_DMXX24_100:
+                        case CDROM_TYPE_TEXEL_DM3024_100:
                             dev->buffer[2] = 0x00;
                             dev->buffer[3] = 0x01; /*SCSI-1 compliant*/
                             break;
+                        case CDROM_TYPE_TEXEL_DM3028_106:
+                            dev->buffer[2] = 0x02;
+                            dev->buffer[3] = 0x01; /*SCSI-2 compliant*/
+                            break;
                         case CDROM_TYPE_NEC_25_10a:
-                        case CDROM_TYPE_NEC_38_103:
                         case CDROM_TYPE_NEC_75_103:
                         case CDROM_TYPE_NEC_77_106:
-                        case CDROM_TYPE_NEC_211_100:
-                        case CDROM_TYPE_NEC_464_105:
                             dev->buffer[3] = 0x00; /*SCSI unknown version per NEC manuals*/
                             break;
                         case CDROM_TYPE_TOSHIBA_XM3201B_3232:
@@ -3388,8 +3406,6 @@ begin:
                         case CDROM_TYPE_NEC_38_103:
                         case CDROM_TYPE_NEC_75_103:
                         case CDROM_TYPE_NEC_77_106:
-                        case CDROM_TYPE_NEC_211_100:
-                        case CDROM_TYPE_NEC_464_105:
                             break;
                         default:
                             dev->buffer[6] = 0x01; /* 16-bit transfers supported */
@@ -3439,7 +3455,7 @@ atapi_out:
 
             len = MIN(len, max_len);
 
-            scsi_cdrom_set_buf_len(dev, BufLen, &len);
+            scsi_cdrom_set_buf_len(dev, BufLen, &max_len);
             scsi_cdrom_log("Inquiry = %d, max = %d, BufLen = %d.\n", len, max_len, *BufLen);
 
             scsi_cdrom_data_command_finish(dev, len, len, max_len, 0);
@@ -3470,10 +3486,12 @@ atapi_out:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_READ_HEADER_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_READ_HEADER_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_DATA_IN);
                     dev->sony_vendor = 1;
 
@@ -3534,17 +3552,19 @@ atapi_out:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_READ_SUBCHANNEL_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_READ_SUBCHANNEL_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_DATA_IN);
                     dev->sony_vendor = 1;
 
                     max_len = cdb[7];
                     max_len <<= 8;
                     max_len |= cdb[8];
-                    msf = dev->ms_pages_saved_sony.pages[GPMODE_CDROM_PAGE_SONY][2] & 0x01;
+                    msf = dev->drv->sony_msf;
 
                     scsi_cdrom_log("CD-ROM %i: Getting sub-channel type (%s), code-q = %02x\n", dev->id, msf ? "MSF" : "LBA", cdb[2] & 0x40);
 
@@ -3552,7 +3572,7 @@ atapi_out:
                         scsi_cdrom_buf_alloc(dev, 9);
                         memset(dev->buffer, 0, 9);
                         len = 9;
-                        cdrom_get_current_subchannel_sony(dev->drv, dev->buffer, msf || dev->drv->sony_msf);
+                        cdrom_get_current_subchannel_sony(dev->drv, dev->buffer, msf);
                         len = MIN(len, max_len);
                         scsi_cdrom_set_buf_len(dev, BufLen, &len);
                         scsi_cdrom_data_command_finish(dev, len, len, len, 0);
@@ -3665,6 +3685,7 @@ atapi_out:
             dev->buffer[6] = 8;
             len            = 8;
 
+            scsi_cdrom_log("CD-ROM Capacity=%x.\n", dev->drv->cdrom_capacity - 1);
             scsi_cdrom_set_buf_len(dev, BufLen, &len);
 
             scsi_cdrom_data_command_finish(dev, len, len, len, 0);
@@ -3690,10 +3711,12 @@ atapi_out:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PAUSE_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PAUSE_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_STATUS);
                     dev->sony_vendor = 1;
                     cdrom_audio_pause_resume(dev->drv, !(cdb[1] & 0x10));
@@ -3713,10 +3736,12 @@ atapi_out:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PLAY_AUDIO_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PLAY_AUDIO_SONY*/
                     cdb[0] = GPCMD_PLAY_AUDIO_10;
                     dev->current_cdb[0] = cdb[0];
                     dev->sony_vendor    = 1;
@@ -3751,10 +3776,12 @@ atapi_out:
                     goto begin;
                     break;
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100: /*GPCMD_PLAYBACK_CONTROL_SONY*/
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106: /*GPCMD_PLAYBACK_CONTROL_SONY*/
                     scsi_cdrom_set_phase(dev, SCSI_PHASE_DATA_OUT);
                     dev->sony_vendor = 1;
 
@@ -3959,6 +3986,7 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
                     block_desc_len = dev->buffer[2];
                     block_desc_len <<= 8;
                     block_desc_len |= dev->buffer[3];
+                    pclog("BlockDescLen (6)=%d, ParamListLen (6)=%d.\n", block_desc_len, param_list_len);
                 } else {
                     block_desc_len = dev->buffer[6];
                     block_desc_len <<= 8;
@@ -3969,9 +3997,12 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
 
             pos = hdr_len + block_desc_len;
 
+            for (uint16_t j = 0; j < pos; j++) {
+                pclog("Buffer Mode Select, pos=%d, data=%02x.\n", j, dev->buffer[j]);
+            }
             while (1) {
                 if (pos >= param_list_len) {
-                    scsi_cdrom_log("CD-ROM %i: Buffer has only block descriptor\n", dev->id);
+                    pclog("CD-ROM %i: Buffer has only block descriptor\n", dev->id);
                     break;
                 }
 
@@ -3982,12 +4013,17 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
 
                 switch (dev->drv->type) {
                     case CDROM_TYPE_DEC_RRD45_0436:
+                    case CDROM_TYPE_ShinaKen_DM3x1S_104:
                     case CDROM_TYPE_SONY_CDU541_10i:
                     case CDROM_TYPE_SONY_CDU561_18k:
                     case CDROM_TYPE_SONY_CDU76S_100:
-                    case CDROM_TYPE_TEXEL_DMXX24_100:
+                    case CDROM_TYPE_TEXEL_DM3024_100:
+                    case CDROM_TYPE_TEXEL_DM3028_106:
+                        if ((page == 0x08) && (page_len == 0x02))
+                            dev->drv->sony_msf = dev->buffer[pos] & 0x01;
+
                         if (!(scsi_cdrom_mode_sense_page_flags_sony & (1LL << ((uint64_t) page)))) {
-                            scsi_cdrom_log("CD-ROM %i: Unimplemented page %02X\n", dev->id, page);
+                            pclog("CD-ROM %i: Sony: Unimplemented page %02X\n", dev->id, page);
                             error |= 1;
                         } else {
                             for (i = 0; i < page_len; i++) {
@@ -3998,7 +4034,7 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
                                     if (ch)
                                         dev->ms_pages_saved_sony.pages[page][i + 2] = val;
                                     else {
-                                        scsi_cdrom_log("CD-ROM %i: Unchangeable value on position %02X on page %02X\n", dev->id, i + 2, page);
+                                        pclog("CD-ROM %i: Sony: Unchangeable value on position %02X on page %02X\n", dev->id, i + 2, page);
                                         error |= 1;
                                     }
                                 }
@@ -4007,7 +4043,7 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
                         break;
                     default:
                         if (!(scsi_cdrom_mode_sense_page_flags & (1LL << ((uint64_t) page)))) {
-                            scsi_cdrom_log("CD-ROM %i: Unimplemented page %02X\n", dev->id, page);
+                            pclog("CD-ROM %i: Unimplemented page %02X\n", dev->id, page);
                             error |= 1;
                         } else {
                             for (i = 0; i < page_len; i++) {
@@ -4018,7 +4054,7 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
                                     if (ch)
                                         dev->ms_pages_saved.pages[page][i + 2] = val;
                                     else {
-                                        scsi_cdrom_log("CD-ROM %i: Unchangeable value on position %02X on page %02X\n", dev->id, i + 2, page);
+                                        pclog("CD-ROM %i: Unchangeable value on position %02X on page %02X\n", dev->id, i + 2, page);
                                         error |= 1;
                                     }
                                 }
@@ -4031,10 +4067,12 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
 
                 switch (dev->drv->type) {
                     case CDROM_TYPE_DEC_RRD45_0436:
+                    case CDROM_TYPE_ShinaKen_DM3x1S_104:
                     case CDROM_TYPE_SONY_CDU541_10i:
                     case CDROM_TYPE_SONY_CDU561_18k:
                     case CDROM_TYPE_SONY_CDU76S_100:
-                    case CDROM_TYPE_TEXEL_DMXX24_100:
+                    case CDROM_TYPE_TEXEL_DM3024_100:
+                    case CDROM_TYPE_TEXEL_DM3028_106:
                         val = scsi_cdrom_mode_sense_pages_default_sony_scsi.pages[page][0] & 0x80;
                         break;
                     default:
@@ -4060,10 +4098,12 @@ scsi_cdrom_phase_data_out(scsi_common_t *sc)
         case 0xC9:
             switch (dev->drv->type) {
                 case CDROM_TYPE_DEC_RRD45_0436:
+                case CDROM_TYPE_ShinaKen_DM3x1S_104:
                 case CDROM_TYPE_SONY_CDU541_10i:
                 case CDROM_TYPE_SONY_CDU561_18k:
                 case CDROM_TYPE_SONY_CDU76S_100:
-                case CDROM_TYPE_TEXEL_DMXX24_100:
+                case CDROM_TYPE_TEXEL_DM3024_100:
+                case CDROM_TYPE_TEXEL_DM3028_106:
                     for (i = 0; i < 18; i++) {
                         dev->ms_pages_saved_sony.pages[GPMODE_CDROM_AUDIO_PAGE_SONY][i] = dev->buffer[i];
                     }
