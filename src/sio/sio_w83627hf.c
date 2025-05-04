@@ -413,7 +413,7 @@ w83627hf_lpt_write(uint16_t cur_reg, uint8_t val, w83627hf_t *dev)
     }
 
     if (dev->dev_regs[1][0x30] & 1) {
-        lpt1_init((dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]));
+        lpt1_setup((dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]));
         lpt1_irq(dev->dev_regs[1][0x70]);
         w83627hf_log("W83627HF-LPT: BASE: %04x IRQ: %d\n", (dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]), dev->dev_regs[1][0x70]);
     }
@@ -973,7 +973,7 @@ const device_t w83627hf_device = {
     .init          = w83627hf_init,
     .close         = w83627hf_close,
     .reset         = w83627hf_reset,
-    .available     = NULL,
+    .available = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -987,7 +987,7 @@ const device_t w83627hf_no_hwm_device = {
     .init          = w83627hf_init,
     .close         = w83627hf_close,
     .reset         = w83627hf_reset,
-    .available     = NULL,
+    .available = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
