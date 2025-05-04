@@ -107,7 +107,7 @@ nsc366_lpt(nsc366_t *dev)
 
     if (dev->ld_activate[1]) {
         nsc366_log("NSC 366 LPT: Reconfigured with Base 0x%04x IRQ: %d\n", base, irq);
-        lpt1_init(base);
+        lpt1_setup(base);
         lpt1_irq(irq);
     }
 }
@@ -522,7 +522,7 @@ const device_t nsc366_device = {
     .init          = nsc366_init,
     .close         = nsc366_close,
     .reset         = nsc366_reset,
-    .available     = NULL,
+    .available = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -536,7 +536,7 @@ const device_t nsc366_4f_device = {
     .init          = nsc366_init,
     .close         = nsc366_close,
     .reset         = nsc366_reset,
-    .available     = NULL,
+    .available = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL

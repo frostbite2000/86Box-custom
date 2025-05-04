@@ -143,7 +143,7 @@ it8702_lpt(it8702_t *dev)
 
     if (dev->enable[1] & 1) {
         it8702_log("IT8702 LPT1: Enabled with Base: 0x%x IRQ: %d\n", base, irq);
-        lpt1_init(base);
+        lpt1_setup(base);
         lpt1_irq(irq);
         lpt2_irq(irq);
     }
@@ -449,7 +449,7 @@ const device_t it8702_device = {
     .init          = it8702_init,
     .close         = it8702_close,
     .reset         = it8702_reset,
-    .available     = NULL,
+    .available = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
