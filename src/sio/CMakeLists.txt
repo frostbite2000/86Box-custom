@@ -25,7 +25,9 @@ add_library(sio OBJECT
     sio_fdc37c669.c
     sio_fdc37c93x.c
     sio_fdc37m60x.c
+    sio_nsc366.c
     sio_it86x1f.c
+    sio_it8702.c
     sio_pc87306.c
     sio_pc87307.c
     sio_pc87309.c
@@ -34,6 +36,7 @@ add_library(sio OBJECT
     sio_pc87332.c
     sio_prime3b.c
     sio_prime3c.c
+    sio_w83627hf.c
     sio_w83787f.c
     sio_w83877f.c
     sio_w83977f.c

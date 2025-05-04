@@ -68,6 +68,13 @@ extern const device_t i82091aa_398_device;
 extern const device_t i82091aa_ide_pri_device;
 extern const device_t i82091aa_ide_device;
 
+/* ITE IT8702 */
+extern const device_t it8702_device;
+
+/* National Semiconductor NSC366 (PC87366) */
+extern const device_t nsc366_device;
+extern const device_t nsc366_4f_device;
+
 /* National Semiconductors */
 extern const device_t pc87310_device;
 extern const device_t pc87310_ide_device;
@@ -124,6 +131,8 @@ extern const device_t via_vt82c686_sio_device;
 extern const device_t vl82c113_device;
 
 /* Winbond */
+extern const device_t w83627hf_device;
+extern const device_t w83627hf_no_hwm_device;
 extern const device_t w83787f_88h_device;
 extern const device_t w83787f_device;
 extern const device_t w83787f_ide_device;

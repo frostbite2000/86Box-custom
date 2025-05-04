@@ -16,6 +16,7 @@
 #          Copyright 2021-2025 Jasmine Iwanek.
 #
 
+
 add_library(dev OBJECT
     access_bus.c
     bugger.c
@@ -27,10 +28,13 @@ add_library(dev OBJECT
     hwm_gl518sm.c
     hwm_lm75.c
     hwm_lm78.c
+    hwm_nsc366.c
     hwm_vt82c686.c
     i2c.c
     i2c_gpio.c
     ibm_5161.c
+    intel_ich2_gpio.c
+    intel_ich2_trap.c
     isamem.c
     isartc.c
     isapnp.c
@@ -43,6 +47,7 @@ add_library(dev OBJECT
     mouse.c
     mouse_bus.c
     mouse_microtouch_touchscreen.c
+    tco.c
     mouse_ps2.c
     mouse_serial.c
     nec_mate_unk.c
