@@ -135,6 +135,9 @@ static char flash_path[1024];
 #define AMD         0x01 /* AMD Manufacturer's ID */
 #define AMD29F020A  0xb000
 
+#define VITELIC     0x40 /* Vitelc Manufacturer's ID */
+#define V29C51002T  0xa200
+
 #define SIZE_512K   0x010000
 #define SIZE_1M     0x020000
 #define SIZE_2M     0x040000
@@ -988,6 +991,20 @@ const device_t amd_flash_29f020a_device = {
     .internal_name = "amd_flash_29f020a",
     .flags         = 0,
     .local         = AMD | AMD29F020A | SIZE_2M,
+    .init          = sst_init,
+    .close         = sst_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t vitelic_flash_v29c51002t_device = {
+    .name          = "Vitelic V29C1002T Flash BIOS",
+    .internal_name = "amd_flash_29f020a",
+    .flags         = 0,
+    .local         = VITELIC | V29C51002T | SIZE_2M,
     .init          = sst_init,
     .close         = sst_close,
     .reset         = NULL,

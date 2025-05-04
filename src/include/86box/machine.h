@@ -821,6 +821,7 @@ extern int machine_at_p6i440e2_init(const machine_t *);
 
 extern int machine_at_p2bls_init(const machine_t *);
 extern int machine_at_lgibmx7g_init(const machine_t *);
+extern int machine_at_p2bae_init(const machine_t *);
 extern int machine_at_p3bf_init(const machine_t *);
 extern int machine_at_bf6_init(const machine_t *);
 extern int machine_at_bx6_init(const machine_t *);
