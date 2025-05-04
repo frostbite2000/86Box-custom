@@ -14891,45 +14891,6 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
-    {
-        .name = "[i440BX] ASUS P2B-LS (coreboot)",
-        .internal_name = "p2bls_coreboot",
-        .type = MACHINE_TYPE_SLOT1,
-        .chipset = MACHINE_CHIPSET_INTEL_440BX,
-        .init = machine_at_p2bls_coreboot_init,
-        .p1_handler = NULL,
-        .gpio_handler = NULL,
-        .available_flag = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu = {
-            .package = CPU_PKG_SLOT1,
-            .block = CPU_BLOCK_NONE,
-            .min_bus = 50000000,
-            .max_bus = 112121212,
-            .min_voltage = 1300,
-            .max_voltage = 3500,
-            .min_multi = 1.5,
-            .max_multi = 8.0
-        },
-        .bus_flags = MACHINE_PS2_AGP,
-        .flags = MACHINE_IDE_DUAL | MACHINE_COREBOOT,
-        .ram = {
-            .min = 8192,
-            .max = 1048576,
-            .step = 8192
-        },
-        .nvrmask = 255,
-        .kbc_device = &keyboard_ps2_ami_pci_device,
-        .kbc_p1 = 0xff,
-        .gpio = 0xffffffff,
-        .gpio_acpi = 0xffffffff,
-        .device = NULL,
-        .fdc_device = NULL,
-        .sio_device = NULL,
-        .vid_device = NULL,
-        .snd_device = NULL,
-        .net_device = NULL
-    },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
     {
@@ -15013,44 +14974,6 @@ const machine_t machines[] = {
         .net_device = NULL
     },
     {
-        .name = "[i440BX] ASUS P3B-F (coreboot)",
-        .internal_name = "p3bf_coreboot",
-        .type = MACHINE_TYPE_SLOT1,
-        .chipset = MACHINE_CHIPSET_INTEL_440BX,
-        .init = machine_at_p3bf_coreboot_init,
-        .p1_handler = NULL,
-        .gpio_handler = NULL,
-        .available_flag = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu = {
-            .package = CPU_PKG_SLOT1,
-            .block = CPU_BLOCK_NONE,
-            .min_bus = 66666667,
-            .max_bus = 150000000,
-            .min_voltage = 1300,
-            .max_voltage = 3500,
-            .min_multi = 1.5,
-            .max_multi = 8.0
-        },
-        .bus_flags = MACHINE_PS2_AGP,
-        .flags = MACHINE_IDE_DUAL | MACHINE_COREBOOT,
-        .ram = {
-            .min = 8192,
-            .max = 1048576,
-            .step = 8192
-        },
-        .nvrmask = 255,
-        .kbc_device = &keyboard_ps2_ami_pci_device,
-        .kbc_p1 = 0xff,
-        .gpio = 0xffffffff,
-        .gpio_acpi = 0xffffffff,
-        .device = NULL,
-        .fdc_device = NULL,
-        .sio_device = NULL,
-        .vid_device = NULL,
-        .snd_device = NULL,
-        .net_device = NULL
-    },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
 
