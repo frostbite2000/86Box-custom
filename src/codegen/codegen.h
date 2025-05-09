@@ -313,6 +313,7 @@ extern codegen_timing_t codegen_timing_winchip;
 extern codegen_timing_t codegen_timing_winchip2;
 extern codegen_timing_t codegen_timing_k5;
 extern codegen_timing_t codegen_timing_k6;
+extern codegen_timing_t codegen_timing_k7;
 extern codegen_timing_t codegen_timing_p6;
 
 void codegen_timing_set(codegen_timing_t *timing);
