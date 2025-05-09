@@ -856,7 +856,7 @@ extern uint8_t keyboard_get_shift(void);
             int      x     = (fetch >> 10) & 0x3ff;
             int      a     = (fetch >> 32) & 0x3ff;
             int      r     = (fetch >> 42) & 0x3ff;
-            int      op    = (fetch >> (*OP_BASE ^ 12)) & 0xf;
+            int      op    = (fetch >> 20) & 0xf;
 
             /* Read operands.
                The A operand has some special cases which read as 0 if not fulfilled. */
