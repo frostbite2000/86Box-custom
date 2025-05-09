@@ -119,6 +119,7 @@ const machine_filter_t machine_chipsets[] = {
     { "ALi ALADDiN V",              MACHINE_CHIPSET_ALI_ALADDIN_V       },
     { "ALi ALADDiN-PRO II",         MACHINE_CHIPSET_ALI_ALADDIN_PRO_II  },
     { "AMD 750",                    MACHINE_CHIPSET_AMD_750             },
+    { "AMD 760",                    MACHINE_CHIPSET_AMD_760             },
     { "C&T 82C235 SCAT",            MACHINE_CHIPSET_SCAT                },
     { "C&T 82C236 SCATsx",          MACHINE_CHIPSET_SCAT_SX             },
     { "C&T CS8221 NEAT",            MACHINE_CHIPSET_NEAT                },
@@ -16719,6 +16720,46 @@ const machine_t machines[] = {
         .net_device = NULL
     },
 #endif
+
+    /* AMD 760 boards */
+    {
+        .name = "[AMD 760] DFI AK76-SN",
+        .internal_name = "ak76sn",
+        .type = MACHINE_TYPE_SOCKETA,
+        .chipset = MACHINE_CHIPSET_AMD_760,
+        .init = machine_at_ak76sn_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKETA,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 66666667,
+            .max_bus = 200000000,
+            .min_voltage = 1300,
+            .max_voltage = 3500,
+            .min_multi = 1.5,
+            .max_multi = 15.0
+        },
+        .bus_flags = MACHINE_PS2_NOISA,
+        .flags = MACHINE_IDE_DUAL,
+        .ram = {
+            .min = 32768,
+            .max = 2097152,
+            .step = 32768
+        },
+        .nvrmask = 255,
+        .kbc_device = NULL,
+        .kbc_p1 = 0,
+        .gpio = 0,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
 
     {
         .name = NULL,

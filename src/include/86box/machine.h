@@ -187,8 +187,9 @@ enum {
     MACHINE_TYPE_SLOT2      = 22,
     MACHINE_TYPE_SOCKET370  = 23,
     MACHINE_TYPE_SLOTA      = 24,
-    MACHINE_TYPE_MISC       = 25,
-    MACHINE_TYPE_MAX        = 26
+    MACHINE_TYPE_SOCKETA    = 25,
+    MACHINE_TYPE_MISC       = 26,
+    MACHINE_TYPE_MAX        = 27
 };
 
 enum {
@@ -209,6 +210,7 @@ enum {
     MACHINE_CHIPSET_ALI_ALADDIN_V,
     MACHINE_CHIPSET_ALI_ALADDIN_PRO_II,
     MACHINE_CHIPSET_AMD_750,
+    MACHINE_CHIPSET_AMD_760,
     MACHINE_CHIPSET_SCAT,
     MACHINE_CHIPSET_SCAT_SX,
     MACHINE_CHIPSET_NEAT,
@@ -874,6 +876,9 @@ extern int machine_at_s2080_init(const machine_t *);
 
 /* m_at_slota.c */
 extern int machine_at_k7m_init(const machine_t *);
+
+/* m_at_sockata.c */
+extern int machine_at_ak76sn_init(const machine_t *);
 
 /* m_at_misc.c */
 extern int machine_at_vpc2007_init(const machine_t *);

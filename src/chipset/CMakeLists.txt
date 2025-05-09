@@ -29,6 +29,7 @@ add_library(chipset OBJECT
     ali6117.c
     ali1409.c
     amd751.c
+    amd761.c
     headland.c
     ims8848.c
     intel_82335.c

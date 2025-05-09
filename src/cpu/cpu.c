@@ -235,6 +235,7 @@ int is_pentium;
 int is_k5;
 int is_k6;
 int is_athlon;
+int is_athlonxp;
 int is_p6;
 int is_pentium3;
 int is_cxsmm;
@@ -578,6 +579,7 @@ cpu_set(void)
     is_k5      = !strcmp(cpu_f->manufacturer, "AMD") && (cpu_s->cpu_type > CPU_ENH_Am486DX) && (cpu_s->cpu_type < CPU_K6);
     is_k6      = (cpu_s->cpu_type >= CPU_K6) && !strcmp(cpu_f->manufacturer, "AMD");
     is_athlon  = (cpu_s->cpu_type >= CPU_ATHLON) && !strcmp(cpu_f->manufacturer, "AMD");
+    is_athlonxp = (cpu_s->cpu_type >= CPU_ATHLONXP) && !strcmp(cpu_f->manufacturer, "AMD");
     /* The Samuel 2 datasheet claims it's Celeron-compatible. */
     is_p6       = (cpu_isintel && (cpu_s->cpu_type >= CPU_PENTIUMPRO)) || !strcmp(cpu_f->manufacturer, "VIA");
     is_pentium3 = cpu_isintel && (cpu_s->cpu_type >= CPU_PENTIUM3);
@@ -1943,7 +1945,71 @@ cpu_set(void)
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
 
 #ifdef USE_DYNAREC
-            codegen_timing_set(&codegen_timing_k6);
+            codegen_timing_set(&codegen_timing_k7);
+#endif
+            amd_k7_smram_aseg = smram_add();
+            amd_k7_smram_tseg = smram_add();
+            break;
+
+        case CPU_ATHLONXP:
+#ifdef USE_DYNAREC
+            x86_setopcodes(ops_386, ops_k62_0f, dynarec_ops_386, dynarec_ops_k62_0f);
+            x86_dynarec_opcodes_da_a16  = dynarec_ops_fpu_686_da_a16;
+            x86_dynarec_opcodes_da_a32  = dynarec_ops_fpu_686_da_a32;
+            x86_dynarec_opcodes_db_a16  = dynarec_ops_fpu_686_db_a16;
+            x86_dynarec_opcodes_db_a32  = dynarec_ops_fpu_686_db_a32;
+            x86_dynarec_opcodes_df_a16  = dynarec_ops_fpu_686_df_a16;
+            x86_dynarec_opcodes_df_a32  = dynarec_ops_fpu_686_df_a32;
+            x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOWE;
+#else
+            x86_setopcodes(ops_386, ops_k62_0f);
+#endif
+            x86_opcodes_3DNOW = ops_3DNOWE;
+            x86_opcodes_da_a16  = ops_fpu_686_da_a16;
+            x86_opcodes_da_a32  = ops_fpu_686_da_a32;
+            x86_opcodes_db_a16  = ops_fpu_686_db_a16;
+            x86_opcodes_db_a32  = ops_fpu_686_db_a32;
+            x86_opcodes_df_a16  = ops_fpu_686_df_a16;
+            x86_opcodes_df_a32  = ops_fpu_686_df_a32;
+
+            timing_rr  = 1; /* register dest - register src */
+            timing_rm  = 2; /* register dest - memory src */
+            timing_mr  = 3; /* memory dest   - register src */
+            timing_mm  = 3;
+            timing_rml = 2; /* register dest - memory src long */
+            timing_mrl = 3; /* memory dest   - register src long */
+            timing_mml = 3;
+            timing_bt  = 0; /* branch taken */
+            timing_bnt = 1; /* branch not taken */
+
+            timing_int                = 6;
+            timing_int_rm             = 11;
+            timing_int_v86            = 54;
+            timing_int_pm             = 25;
+            timing_int_pm_outer       = 42;
+            timing_iret_rm            = 7;
+            timing_iret_v86           = 27; /* unknown */
+            timing_iret_pm            = 10;
+            timing_iret_pm_outer      = 27;
+            timing_call_rm            = 4;
+            timing_call_pm            = 4;
+            timing_call_pm_gate       = 22;
+            timing_call_pm_gate_inner = 44;
+            timing_retf_rm            = 4;
+            timing_retf_pm            = 4;
+            timing_retf_pm_outer      = 23;
+            timing_jmp_rm             = 3;
+            timing_jmp_pm             = 3;
+            timing_jmp_pm_gate        = 18;
+
+            timing_misaligned = 3;
+
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_3DNOW | CPU_FEATURE_3DNOWE;
+            msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
+            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
+
+#ifdef USE_DYNAREC
+            codegen_timing_set(&codegen_timing_k7);
 #endif
             amd_k7_smram_aseg = smram_add();
             amd_k7_smram_tseg = smram_add();
@@ -2704,6 +2770,70 @@ cpu_CPUID(void)
             }
             break;
 
+        case CPU_ATHLONXP:
+            switch (EAX) {
+                case 0:
+                    EAX = 1;
+                    EBX = 0x68747541; /* AuthenticAMD */
+                    ECX = 0x444d4163;
+                    EDX = 0x69746e65;
+                    break;
+                case 1:
+                    EAX = CPUID;
+                    EBX = ECX = 0;
+                    EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_SSE;
+                    break;
+                case 0x80000000:
+                    EAX = 0x80000008;
+                    EBX = 0x68747541;
+                    ECX = 0x444d4163;
+                    EDX = 0x69746e65;
+                    break;
+                case 0x80000001:
+                    EAX = CPUID + 0x100;
+                    EBX = ECX = 0;
+                    EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_AMDSEP | CPUID_MMX | CPUID_SSE | CPUID_3DNOW | CPUID_3DNOWE;
+                    break;
+                case 0x80000002:      /* Processor name string */
+                    EAX = 0x6c687441;
+                    EBX = 0x58206e6f;
+                    ECX = 0x50282050;
+                    EDX = 0x6d6f6c61;
+                    break;
+                case 0x80000003:      /* Processor name string */
+                    EAX = 0x3f7f6e69;
+                    EBX = 0x002b3030;
+                    ECX = 0x00000000;
+                    EDX = 0x00000000;
+                    break;
+                case 0x80000005: /* Cache information */
+                    EAX = 0x0408ff08;
+                    EBX = 0xff20ff10; /* TLBs */
+                    ECX = 0x40020140; /* L1 data cache */
+                    EDX = 0x40020140; /* L1 instruction cache */
+                    break;
+                case 0x80000006: /* L2 Cache information */
+                    EAX = 0;
+                    EBX = 0x41004100;
+                    EDX = 0x01008140;
+                    ECX = 0;
+                    break;
+                case 0x80000007: /* PowerNow information */
+                    EAX = EBX = ECX = 0;
+                    EDX             = 1;
+                    break;
+                case 0x80000008:
+                    EAX = 0x00002022;
+                    EBX = 0;
+                    ECX = 0;
+                    EDX = 0;
+                    break;
+                default:
+                    EAX = EBX = ECX = EDX = 0;
+                    break;
+            }
+            break;
+
         case CPU_PENTIUMMMX:
             if (!EAX) {
                 EAX = 0x00000001;
@@ -3250,6 +3380,7 @@ cpu_ven_reset(void)
             break;
 
         case CPU_ATHLON:
+        case CPU_ATHLONXP:
             msr.mtrr_cap = 0x00000508ULL;
             /* FALLTHROUGH */
         case CPU_K6_2P:
@@ -3594,6 +3725,7 @@ cpu_RDMSR(void)
         case CPU_K6_2P:
         case CPU_K6_3P:
         case CPU_ATHLON:
+        case CPU_ATHLONXP:
             EAX = 0;
             /* EDX is left unchanged when reading this MSR! */
             if (ECX != 0x82)
@@ -3626,11 +3758,11 @@ cpu_RDMSR(void)
                 case 0x8b:
                     break;
                 case 0x17a:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     break;
                 case 0x17b:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mcg_ctl & 0xffffffff;
                     EDX = msr.mcg_ctl >> 32;
@@ -3651,7 +3783,7 @@ cpu_RDMSR(void)
                 case 0x20d:
                 case 0x20e:
                 case 0x20f:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     if (ECX & 1) {
                         EAX = msr.mtrr_physmask[(ECX - 0x200) >> 1] & 0xffffffff;
@@ -3662,19 +3794,19 @@ cpu_RDMSR(void)
                     }
                     break;
                 case 0x250:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mtrr_fix64k_8000 & 0xffffffff;
                     EDX = msr.mtrr_fix64k_8000 >> 32;
                     break;
                 case 0x258:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mtrr_fix16k_8000 & 0xffffffff;
                     EDX = msr.mtrr_fix16k_8000 >> 32;
                     break;
                 case 0x259:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mtrr_fix16k_a000 & 0xffffffff;
                     EDX = msr.mtrr_fix16k_a000 >> 32;
@@ -3687,19 +3819,19 @@ cpu_RDMSR(void)
                 case 0x26d:
                 case 0x26e:
                 case 0x26f:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mtrr_fix4k[ECX - 0x268] & 0xffffffff;
                     EDX = msr.mtrr_fix4k[ECX - 0x268] >> 32;
                     break;
                 case 0x277:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.pat & 0xffffffff;
                     EDX = msr.pat >> 32;
                     break;
                 case 0x2ff:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mtrr_deftype & 0xffffffff;
                     EDX = msr.mtrr_deftype >> 32;
@@ -3709,7 +3841,7 @@ cpu_RDMSR(void)
                 case 0x408:
                 case 0x40c:
                 case 0x410:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.mca_ctl[(ECX - 0x400) >> 2] & 0xffffffff;
                     EDX = msr.mca_ctl[(ECX - 0x400) >> 2] >> 32;
@@ -3724,7 +3856,7 @@ cpu_RDMSR(void)
                 case 0x40e:
                 case 0x411:
                 case 0x412:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     break;
                 /* Array Access Register */
@@ -3812,77 +3944,77 @@ cpu_RDMSR(void)
                     EDX = msr.amd_l2aar >> 32;
                     break;
                 case 0xc0010000 ... 0xc0010007:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     break;
                 case 0xc0010010:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_syscfg & 0xffffffff;
                     EDX = msr.amd_syscfg >> 32;
                     break;
                 case 0xc0010015:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_hwcr_athlon & 0xffffffff;
                     EDX = msr.amd_hwcr_athlon >> 32;
                     break;
                 case 0xc0010016:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_iorrbase1 & 0xffffffff;
                     EDX = msr.amd_iorrbase1 >> 32;
                     break;
                 case 0xc0010017:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_iorrmask1 & 0xffffffff;
                     EDX = msr.amd_iorrmask1 >> 32;
                     break;
                 case 0xc0010018:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_iorrbase2 & 0xffffffff;
                     EDX = msr.amd_iorrbase2 >> 32;
                     break;
                 case 0xc0010019:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_iorrmask2 & 0xffffffff;
                     EDX = msr.amd_iorrmask2 >> 32;
                     break;
                 case 0xc001001a:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_topmem & 0xffffffff;
                     EDX = msr.amd_topmem >> 32;
                     break;
                 case 0xc001001b:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_clkctl & 0xffffffff;
                     EDX = msr.amd_clkctl >> 32;
                     break;
                 case 0xc001001c:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.ecxc001001c & 0xffffffff;
                     EDX = msr.ecxc001001c >> 32;
                     break;
                 case 0xc0010111:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_smbase & 0xffffffff;
                     EDX = 0;
                     break;
                 case 0xc0010112:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_smmaddr;
                     EDX = 0;
                     break;
                 case 0xc0010113:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_rdmsr;
                     EAX = msr.amd_smmmask;
                     EDX = 0;
@@ -4824,7 +4956,7 @@ cpu_WRMSR(void)
                 case 0x408:
                 case 0x40c:
                 case 0x410:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.mca_ctl[(ECX - 0x400) >> 2] = EAX | ((uint64_t) EDX << 32);
                     break;
@@ -4838,7 +4970,7 @@ cpu_WRMSR(void)
                 case 0x40e:
                 case 0x411:
                 case 0x412:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     if (EAX || EDX)
                         x86gpf(NULL, 0);
@@ -4920,58 +5052,58 @@ cpu_WRMSR(void)
                     msr.amd_l2aar = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010000 ... 0xc0010007:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     break;
                 case 0xc0010010:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_syscfg = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010015:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_hwcr_athlon = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010016:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_iorrbase1 = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010017:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_iorrmask1 = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010018:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_iorrbase2 = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010019:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_iorrmask2 = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc001001a:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_topmem = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc001001b:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.amd_clkctl = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc001001c:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     msr.ecxc001001c = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010020:
                     break;
                 case 0xc0010111:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     smram_disable(amd_k7_smram_aseg);
                     msr.amd_smbase = EAX | ((uint64_t) EDX << 32);
@@ -4979,7 +5111,7 @@ cpu_WRMSR(void)
                     flushmmucache();
                     break;
                 case 0xc0010112:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     smram_disable(amd_k7_smram_tseg);
                     msr.amd_smmaddr = EAX | ((uint64_t) EDX << 32);
@@ -4987,7 +5119,7 @@ cpu_WRMSR(void)
                     flushmmucache();
                     break;
                 case 0xc0010113:
-                    if (cpu_s->cpu_type < CPU_ATHLON)
+                    if ((cpu_s->cpu_type < CPU_ATHLON) || (cpu_s->cpu_type < CPU_ATHLONXP))
                         goto amd_k_invalid_wrmsr;
                     smram_disable(amd_k7_smram_tseg);
                     msr.amd_smmmask = EAX | ((uint64_t) EDX << 32);

@@ -292,6 +292,7 @@ extern const device_t intel_ich2_hub_device;
 extern const device_t ali5243_agp_device;
 extern const device_t ali5247_agp_device;
 extern const device_t amd751_agp_device;
+extern const device_t amd761_agp_device;
 extern const device_t i440lx_agp_device;
 extern const device_t i440bx_agp_device;
 extern const device_t i440gx_agp_device;

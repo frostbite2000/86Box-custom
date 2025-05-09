@@ -84,6 +84,7 @@ enum {
     CPU_PENTIUM2,
     CPU_PENTIUM2D,
     CPU_ATHLON,
+    CPU_ATHLONXP,
     CPU_PENTIUM3
 };
 
@@ -116,7 +117,8 @@ enum {
     CPU_PKG_SLOT1            = (1 << 25),
     CPU_PKG_SLOT2            = (1 << 26),
     CPU_PKG_SOCKET370        = (1 << 27),
-    CPU_PKG_SLOTA            = (1 << 28)
+    CPU_PKG_SLOTA            = (1 << 28),
+    CPU_PKG_SOCKETA            = (1 << 29)
 };
 
 #define CPU_SUPPORTS_DYNAREC 1
@@ -581,6 +583,7 @@ extern int is_k5;
 extern int is_k6;
 extern int is_p6;
 extern int is_athlon;
+extern int is_athlonxp;
 extern int is_pentium3;
 extern int is_cxsmm;
 extern int hascache;

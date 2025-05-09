@@ -16,6 +16,7 @@
  */
 
 #include <stdio.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
@@ -36,6 +37,7 @@
 #define AGP_BRIDGE_ALI_M5243   0x10b95243
 #define AGP_BRIDGE_ALI_M5247   0x10b95247
 #define AGP_BRIDGE_AMD_751     0x10227007
+#define AGP_BRIDGE_AMD_761     0x1022700f
 #define AGP_BRIDGE_INTEL_440LX 0x80867181
 #define AGP_BRIDGE_INTEL_440BX 0x80867191
 #define AGP_BRIDGE_INTEL_440GX 0x808671a1
@@ -147,6 +149,8 @@ pci_bridge_write(int func, int addr, uint8_t val, void *priv)
                 val &= 0xc3;
             else if (dev->local == AGP_BRIDGE_AMD_751)
                 val &= 0x03;
+            else if (dev->local == AGP_BRIDGE_AMD_761)
+                val &= 0x03;
             else if (AGP_BRIDGE_SIS(dev->local))
                 val &= 0x27;
             else
@@ -167,7 +171,7 @@ pci_bridge_write(int func, int addr, uint8_t val, void *priv)
             break;
 
         case 0x07:
-            if ((dev->local == AGP_BRIDGE_INTEL_440LX) || (dev->local == AGP_BRIDGE_INTEL_815EP) || (dev->local == AGP_BRIDGE_AMD_751))
+            if ((dev->local == AGP_BRIDGE_INTEL_440LX) || (dev->local == AGP_BRIDGE_INTEL_815EP) || (dev->local == AGP_BRIDGE_AMD_751) || (dev->local == AGP_BRIDGE_AMD_761))
                 dev->regs[addr] &= ~(val & 0x40);
             else if (dev->local == PCI_BRIDGE_INTEL_ICH2)
                 dev->regs[addr] &= ~(val & 0xf9);
@@ -210,6 +214,8 @@ pci_bridge_write(int func, int addr, uint8_t val, void *priv)
             } else if (AGP_BRIDGE_ALI(dev->local))
                 dev->regs[addr] &= ~(val & 0xf0);
             else if (dev->local == AGP_BRIDGE_AMD_751)
+                dev->regs[addr] &= ~(val & 0x70);
+            else if (dev->local == AGP_BRIDGE_AMD_761)
                 dev->regs[addr] &= ~(val & 0x70);
             return;
 
@@ -489,6 +495,11 @@ pci_bridge_reset(void *priv)
             dev->regs[0x07] = 0x02;
             break;
 
+        case AGP_BRIDGE_AMD_761:
+            dev->regs[0x06] = 0x20;
+            dev->regs[0x07] = 0x02;
+            break;
+
         case AGP_BRIDGE_INTEL_440LX:
             dev->regs[0x06] = 0xa0;
             dev->regs[0x07] = 0x02;
@@ -537,6 +548,12 @@ pci_bridge_reset(void *priv)
 
     if (dev->local == AGP_BRIDGE_ALI_M5247)
         dev->regs[0x1e] = 0x20;
+    else if (dev->local == AGP_BRIDGE_AMD_761) {
+        dev->regs[0x1c] = 0xa1;
+        dev->regs[0x1d] = 0x01;
+        dev->regs[0x1e] = 0xaf;
+        dev->regs[0x1f] = 0xff;
+    }
     else if (!AGP_BRIDGE_VIA(dev->local)) {
         dev->regs[0x1e] = AGP_BRIDGE(dev->local) ? 0xa0 : 0x80;
         dev->regs[0x1f] = 0x02;
@@ -552,6 +569,16 @@ pci_bridge_reset(void *priv)
         dev->regs[0x24] = dev->regs[0x25] = 0;
         dev->regs[0x26] = dev->regs[0x27] = 0;
         dev->regs[0x30] = dev->regs[0x32] = 0x81;
+    } else if (dev->local == AGP_BRIDGE_AMD_761) {
+        dev->regs[0x20] = 0x00;
+        dev->regs[0x21] = 0x00;
+        dev->regs[0x22] = 0xe0;
+        dev->regs[0x23] = 0xe0;
+        dev->regs[0x24] = 0x00;
+        dev->regs[0x25] = 0x80;
+        dev->regs[0x26] = 0xd8;
+        dev->regs[0x27] = 0xdf;
+        dev->regs[0x30] = dev->regs[0x32] = 0x20;
     } else {
         dev->regs[0x24] = dev->regs[0x26] = 0x01;
     }
@@ -669,6 +696,20 @@ const device_t amd751_agp_device = {
     .internal_name = "amd751_agp",
     .flags         = DEVICE_PCI,
     .local         = AGP_BRIDGE_AMD_751,
+    .init          = pci_bridge_init,
+    .close         = NULL,
+    .reset         = pci_bridge_reset,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t amd761_agp_device = {
+    .name          = "AMD 761 AGP Bridge",
+    .internal_name = "amd761_agp",
+    .flags         = DEVICE_PCI,
+    .local         = AGP_BRIDGE_AMD_761,
     .init          = pci_bridge_init,
     .close         = NULL,
     .reset         = pci_bridge_reset,

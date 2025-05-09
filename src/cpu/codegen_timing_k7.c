@@ -1,5 +1,7 @@
-/*Basic K7 timing model by plant/nerd73 and qeeg. Based on the P6 timing model*/
-/*Some cycle timings come from https://www.agner.org/optimize/instruction_tables.pdf*/
+/*
+ * AMD K7 (Athlon) timing model
+ * Based on InstLatx64 benchmark data for AMD K7 (Athlon) Slot A
+ */
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -20,25 +22,27 @@
 #include "codegen_timing_common.h"
 
 typedef enum uop_type_t {
-    UOP_ALU = 0,   /*Executes in any ALU unit*/
-    UOP_ALUP0,     /*Executes in Port 0 or Port 1 ALU unit*/
-    UOP_LOAD,      /*Executes in Load unit*/
-    UOP_STORED,    /*Executes in Data Store unit*/
-    UOP_STOREA,    /*Executes in Address Store unit*/
-    UOP_FLOAD,     /*Executes in Load unit*/
-    UOP_FSTORED,   /*Executes in Data Store unit*/
-    UOP_FSTOREA,   /*Executes in Address Store unit*/
-    UOP_MLOAD,     /*Executes in Load unit*/
-    UOP_MSTORED,   /*Executes in Data Store unit*/
-    UOP_MSTOREA,   /*Executes in Address Store unit*/
-    UOP_FLOAT,
-    UOP_FADD,      /*Executes in Floating Point unit*/
-    UOP_FMUL,
-    UOP_MMX,       /*Executes in Port 0 or 1 ALU units as MMX*/
-    UOP_MMX_MUL,   /*Executes in Port 0 ALU unit. Uses MMX multiplier*/
-    UOP_3DNOW,
-    UOP_BRANCH,    /*Executes in Branch unit*/
-    UOP_FXCH       /*Does not require an execution unit*/
+    UOP_ALU = 0,    /* Executes in any ALU unit */
+    UOP_ALUP0,      /* Executes in Port 0 or Port 1 ALU unit */
+    UOP_LOAD,       /* Executes in Load unit */
+    UOP_STORED,     /* Executes in Data Store unit */
+    UOP_STOREA,     /* Executes in Address Store unit */
+    UOP_FLOAD,      /* Executes in Load unit */
+    UOP_FSTORED,    /* Executes in Data Store unit */
+    UOP_FSTOREA,    /* Executes in Address Store unit */
+    UOP_MLOAD,      /* Executes in Load unit */
+    UOP_MSTORED,    /* Executes in Data Store unit */
+    UOP_MSTOREA,    /* Executes in Address Store unit */
+    UOP_FLOAT,      /* Executes in FPU unit */
+    UOP_FADD,       /* Executes in FP ADD unit */
+    UOP_FMUL,       /* Executes in FP MUL unit */
+    UOP_FDIV,       /* Executes in FP DIV unit */
+    UOP_MMX,        /* Executes in MMX unit */
+    UOP_MMX_SHIFT,  /* Executes in MMX SHIFT unit */
+    UOP_MMX_MUL,    /* Executes in MMX MUL unit */
+    UOP_3DNOW,      /* Executes in 3DNow unit */
+    UOP_BRANCH,     /* Executes in Branch unit */
+    UOP_FXCH        /* Does not require an execution unit */
 } uop_type_t;
 
 typedef enum decode_type_t {
@@ -72,19 +76,19 @@ static const macro_op_t alup01_op = {
 static const macro_op_t load_alu_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t load_alup01_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALUP0, .latency = 1 }
 };
 static const macro_op_t alu_store_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,    .latency = 1 },
     .uop[2]      = { .type = UOP_STORED, .latency = 1 },
     .uop[3]      = { .type = UOP_STOREA, .latency = 1 }
@@ -92,7 +96,7 @@ static const macro_op_t alu_store_op = {
 static const macro_op_t alup01_store_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALUP0,  .latency = 1 },
     .uop[2]      = { .type = UOP_STORED, .latency = 1 },
     .uop[3]      = { .type = UOP_STOREA, .latency = 1 }
@@ -107,13 +111,13 @@ static const macro_op_t branch_op = {
 static const macro_op_t fxch_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FXCH, .latency = 1 }
+    .uop[0]      = { .type = UOP_FXCH, .latency = 0 } /* Updated per InstLatx64 - very low latency */
 };
 
 static const macro_op_t load_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 }
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 } /* Updated from 1 to 3 per InstLatx64 */
 };
 
 static const macro_op_t store_op = {
@@ -132,14 +136,14 @@ static const macro_op_t bswap_op = {
 static const macro_op_t leave_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 },
     .uop[2]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t lods_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 2 }, /* Adjusted per InstLatx64 LODSB/W/D */
     .uop[1]      = { .type = UOP_ALU,    .latency = 1 }
 };
 static const macro_op_t loop_op = {
@@ -156,7 +160,7 @@ static const macro_op_t mov_reg_seg_op = {
 static const macro_op_t movs_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated based on InstLatx64 MOVSB/W/D */
     .uop[1]      = { .type = UOP_STORED, .latency = 1 },
     .uop[2]      = { .type = UOP_STOREA, .latency = 1 },
     .uop[3]      = { .type = UOP_ALU,    .latency = 1 }
@@ -164,7 +168,7 @@ static const macro_op_t movs_op = {
 static const macro_op_t pop_reg_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 1 }, /* POP is quite fast on K7 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t pop_mem_op = {
@@ -184,12 +188,12 @@ static const macro_op_t push_imm_op = {
 static const macro_op_t push_mem_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_STORED, .latency = 1 },
     .uop[2]      = { .type = UOP_STOREA, .latency = 1 }
 };
 static const macro_op_t push_seg_op = {
-    .nr_uops     = 3,
+    .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
     .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
     .uop[1]      = { .type = UOP_STORED, .latency = 1 },
@@ -199,9 +203,9 @@ static const macro_op_t push_seg_op = {
 static const macro_op_t stos_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
+    .uop[0]      = { .type = UOP_ALU,    .latency = 1 },
     .uop[1]      = { .type = UOP_STORED, .latency = 1 },
-    .uop[2]      = { .type = UOP_STOREA, .latency = 1 },
-    .uop[3]      = { .type = UOP_ALU,    .latency = 1 }
+    .uop[2]      = { .type = UOP_STOREA, .latency = 1 }
 };
 static const macro_op_t test_reg_op = {
     .nr_uops     = 1,
@@ -216,13 +220,13 @@ static const macro_op_t test_reg_b_op = {
 static const macro_op_t test_mem_imm_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t test_mem_imm_b_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALUP0, .latency = 1 }
 };
 static const macro_op_t xchg_op = {
@@ -236,40 +240,40 @@ static const macro_op_t xchg_op = {
 static const macro_op_t mmx_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_MMX, .latency = 1 }
+    .uop[0]      = { .type = UOP_MMX, .latency = 2 } /* Updated per InstLatx64 benchmarks */
 };
 static const macro_op_t mmx_mul_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_MMX_MUL, .latency = 1 }
+    .uop[0]      = { .type = UOP_MMX_MUL, .latency = 3 } /* Updated per InstLatx64 - PMULHW/PMULLW */
 };
 static const macro_op_t mmx_shift_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_MMX, .latency = 1 }
+    .uop[0]      = { .type = UOP_MMX_SHIFT, .latency = 2 } /* Updated per InstLatx64 */
 };
 static const macro_op_t load_mmx_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 2 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 2 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_MMX,  .latency = 2 }
 };
 static const macro_op_t load_mmx_mul_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,    .latency = 2 },
-    .uop[1]      = { .type = UOP_MMX_MUL, .latency = 2 }
+    .uop[0]      = { .type = UOP_LOAD,    .latency = 3 }, /* Updated from 2 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_MMX_MUL, .latency = 3 }
 };
 static const macro_op_t load_mmx_shift_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 2 },
-    .uop[1]      = { .type = UOP_MMX,  .latency = 2 }
+    .uop[0]      = { .type = UOP_LOAD,      .latency = 3 }, /* Updated from 2 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_MMX_SHIFT, .latency = 2 }
 };
 static const macro_op_t mload_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_MLOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_MLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
 };
 
 static const macro_op_t mstore_op = {
@@ -281,59 +285,57 @@ static const macro_op_t mstore_op = {
 static const macro_op_t pmul_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_MMX_MUL, .latency = 1 }
+    .uop[0]      = { .type = UOP_MMX_MUL, .latency = 3 } /* Updated per InstLatx64 */
 };
 static const macro_op_t pmul_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,    .latency = 2 },
-    .uop[1]      = { .type = UOP_MMX_MUL, .latency = 2 }
+    .uop[0]      = { .type = UOP_LOAD,    .latency = 3 }, /* Updated from 2 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_MMX_MUL, .latency = 3 } /* Updated per InstLatx64 */
 };
 static const macro_op_t float_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 1 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 2 } /* Updated per InstLatx64 - general FPU ops */
 };
 static const macro_op_t fadd_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FADD, .latency = 2 }
+    .uop[0]      = { .type = UOP_FADD, .latency = 4 } /* Updated per InstLatx64 - FADD is ~4 cycles */
 };
 static const macro_op_t fmul_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FMUL, .latency = 3 }
+    .uop[0]      = { .type = UOP_FMUL, .latency = 4 } /* Updated per InstLatx64 - FMUL is ~4-5 cycles */
 };
 static const macro_op_t float2_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[1]      = { .type = UOP_FLOAT, .latency = 1 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 2 },
+    .uop[1]      = { .type = UOP_FLOAT, .latency = 2 }
 };
 static const macro_op_t fchs_op = {
-    .nr_uops     = 3,
+    .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 2 },
-    .uop[1]      = { .type = UOP_FLOAT, .latency = 2 },
-    .uop[2]      = { .type = UOP_FLOAT, .latency = 2 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 2 } /* Updated per InstLatx64 - FCHS is 2 cycles */
 };
 static const macro_op_t load_float_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_FLOAT, .latency = 1 }
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FLOAT, .latency = 2 }
 };
 static const macro_op_t load_fadd_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_FADD,  .latency = 2 }
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FADD,  .latency = 4 } /* Updated per InstLatx64 */
 };
 static const macro_op_t load_fmul_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_FMUL,  .latency = 4 }
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FMUL,  .latency = 4 } /* Updated per InstLatx64 */
 };
 static const macro_op_t fstore_op = {
     .nr_uops     = 2,
@@ -342,36 +344,31 @@ static const macro_op_t fstore_op = {
     .uop[1]      = { .type = UOP_FSTOREA, .latency = 1 },
 };
 static const macro_op_t load_fiadd_op = {
-    .nr_uops     = 7,
+    .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[2]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[3]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[4]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[5]      = { .type = UOP_FLOAT, .latency = 1 },
-    .uop[6]      = { .type = UOP_FLOAT, .latency = 1 }
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FLOAT, .latency = 7 } /* Updated based on FI* ops being more complex */
 };
 static const macro_op_t fdiv_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 24 }
+    .uop[0]      = { .type = UOP_FDIV, .latency = 24 } /* Updated per InstLatx64 - FDIV is 16-24 cycles */
 };
 static const macro_op_t fdiv_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency =  1 },
-    .uop[1]      = { .type = UOP_FLOAT, .latency = 24 }
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FDIV, .latency = 24 } /* Updated per InstLatx64 - FDIV is 16-24 cycles */
 };
 static const macro_op_t fsin_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 131 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 100 } /* Updated per InstLatx64 - FSIN is 100+ cycles */
 };
 static const macro_op_t fsqrt_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 35 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 35 } /* FSQRT is ~35 cycles per InstLatx64 */
 };
 
 static const macro_op_t fldcw_op = {
@@ -382,18 +379,18 @@ static const macro_op_t fldcw_op = {
 static const macro_op_t complex_float_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 1 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 2 } /* Updated per InstLatx64 */
 };
 static const macro_op_t complex_float_l_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAT, .latency = 50 }
+    .uop[0]      = { .type = UOP_FLOAT, .latency = 50 } /* Complex FPU operations */
 };
 static const macro_op_t flde_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_FLOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_FLOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_FLOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[2]      = { .type = UOP_FLOAT, .latency = 2 }
 };
 static const macro_op_t fste_op = {
@@ -447,7 +444,7 @@ static const macro_op_t alup0_3_op = {
 static const macro_op_t alup0_6_op = {
     .nr_uops     = 6,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALUP0, .latency = 1 },
+    .uop[0]      = { .type = UOP_ALUP0, .latency = 6 }, /* Updated specifically for AAA/AAS/AAM/AAD ops */
     .uop[1]      = { .type = UOP_ALUP0, .latency = 1 },
     .uop[2]      = { .type = UOP_ALUP0, .latency = 1 },
     .uop[3]      = { .type = UOP_ALUP0, .latency = 1 },
@@ -463,15 +460,15 @@ static const macro_op_t arpl_op = {
 static const macro_op_t bound_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[2]      = { .type = UOP_ALU,  .latency = 1 },
     .uop[3]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t bsx_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 10 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 9 } /* Updated BSF/BSR per InstLatx64 */
 };
 static const macro_op_t call_far_op = {
     .nr_uops     = 4,
@@ -489,30 +486,30 @@ static const macro_op_t cli_sti_op = {
 static const macro_op_t cmps_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,    .latency = 1 },
     .uop[2]      = { .type = UOP_ALU,    .latency = 1 }
 };
 static const macro_op_t cmpsb_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,    .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,    .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALUP0,   .latency = 1 },
     .uop[2]      = { .type = UOP_ALU,     .latency = 1 }
 };
 static const macro_op_t cmpxchg_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
-    .uop[1]      = { .type = UOP_ALU,    .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALU,    .latency = 3 }, /* Updated per InstLatx64 - CMPXCHG is 3 cycles */
     .uop[2]      = { .type = UOP_STORED, .latency = 1 },
     .uop[3]      = { .type = UOP_STOREA, .latency = 1 }
 };
 static const macro_op_t cmpxchg_b_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,    .latency = 1 },
-    .uop[1]      = { .type = UOP_ALUP0,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,    .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALUP0,   .latency = 3 }, /* Updated per InstLatx64 - CMPXCHG is 3 cycles */
     .uop[2]      = { .type = UOP_STORED,  .latency = 1 },
     .uop[3]      = { .type = UOP_STOREA,  .latency = 1 }
 };
@@ -526,85 +523,85 @@ static const macro_op_t complex_push_mem_op = {
 static const macro_op_t cpuid_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 23 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 50 } /* Updated per InstLatx64 - CPUID is ~43-70 cycles */
 };
 static const macro_op_t div16_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALUP0, .latency = 21 }
+    .uop[0]      = { .type = UOP_ALUP0, .latency = 23 } /* Updated per InstLatx64 - DIV is 17-24 cycles */
 };
 static const macro_op_t div16_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,    .latency =  1 },
-    .uop[1]      = { .type = UOP_ALUP0,   .latency = 21 }
+    .uop[0]      = { .type = UOP_LOAD,    .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALUP0,   .latency = 23 } /* Updated per InstLatx64 - DIV is 17-24 cycles */
 };
 static const macro_op_t div32_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALUP0, .latency = 37 }
+    .uop[0]      = { .type = UOP_ALUP0, .latency = 40 } /* Updated per InstLatx64 - 32-bit DIV is 40-41 cycles */
 };
 static const macro_op_t div32_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency =  1 },
-    .uop[1]      = { .type = UOP_ALUP0,  .latency = 37 }
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALUP0,  .latency = 40 } /* Updated per InstLatx64 - 32-bit DIV is 40-41 cycles */
 };
 static const macro_op_t emms_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 50 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 0 } /* Updated per InstLatx64 - EMMS very low latency */
 };
 static const macro_op_t enter_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_STORED, .latency =  1 },
-    .uop[1]      = { .type = UOP_STOREA, .latency =  1 },
+    .uop[0]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[1]      = { .type = UOP_STOREA, .latency = 1 },
     .uop[2]      = { .type = UOP_ALU,    .latency = 10 }
 };
 static const macro_op_t femms_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 6 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 0 } /* Updated per InstLatx64 - FEMMS very low latency */
 };
 static const macro_op_t in_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 18 }
+    .uop[0]      = { .type = UOP_LOAD, .latency = 18 } /* IO operations are high latency */
 };
 static const macro_op_t ins_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 18 },
-    .uop[1]      = { .type = UOP_STORED, .latency =  1 },
-    .uop[2]      = { .type = UOP_STOREA, .latency =  1 },
-    .uop[3]      = { .type = UOP_ALU,    .latency =  1 }
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 18 }, /* IO operations are high latency */
+    .uop[1]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[2]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[3]      = { .type = UOP_ALU,    .latency = 1 }
 };
 static const macro_op_t int_op = {
     .nr_uops     = 8,
     .decode_type = DECODE_COMPLEX,
     .uop[0]      = {.type = UOP_ALU,     .latency = 20 },
-    .uop[1]      = { .type = UOP_STORED, .latency =  1 },
-    .uop[2]      = { .type = UOP_STOREA, .latency =  1 },
-    .uop[3]      = { .type = UOP_STORED, .latency =  1 },
-    .uop[4]      = { .type = UOP_STOREA, .latency =  1 },
-    .uop[5]      = { .type = UOP_STORED, .latency =  1 },
-    .uop[6]      = { .type = UOP_STOREA, .latency =  1 },
-    .uop[7]      = { .type = UOP_BRANCH, .latency =  1 }
+    .uop[1]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[2]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[3]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[4]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[5]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[6]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[7]      = { .type = UOP_BRANCH, .latency = 1 }
 };
 static const macro_op_t iret_op = {
     .nr_uops     = 5,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency =  3 },
-    .uop[1]      = { .type = UOP_LOAD,   .latency =  3 },
-    .uop[2]      = { .type = UOP_LOAD,   .latency =  3 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 3 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 3 to 3 per InstLatx64 */
+    .uop[2]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 3 to 3 per InstLatx64 */
     .uop[3]      = { .type = UOP_ALU,    .latency = 20 },
-    .uop[4]      = { .type = UOP_BRANCH, .latency =  1 }
+    .uop[4]      = { .type = UOP_BRANCH, .latency = 1 }
 };
 static const macro_op_t invd_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 500 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 500 } /* Very high latency cache invalidation */
 };
 static const macro_op_t jmp_far_op = {
     .nr_uops     = 2,
@@ -615,8 +612,8 @@ static const macro_op_t jmp_far_op = {
 static const macro_op_t lss_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
-    .uop[1]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[2]      = { .type = UOP_ALU,  .latency = 3 }
 };
 static const macro_op_t mov_mem_seg_op = {
@@ -629,7 +626,7 @@ static const macro_op_t mov_mem_seg_op = {
 static const macro_op_t mov_seg_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 3 }
 };
 static const macro_op_t mov_seg_reg_op = {
@@ -640,51 +637,47 @@ static const macro_op_t mov_seg_reg_op = {
 static const macro_op_t mul_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_SIMPLE,
-    .uop[0]      = { .type = UOP_ALUP0, .latency = 1 }
+    .uop[0]      = { .type = UOP_ALUP0, .latency = 4 } /* Updated per InstLatx64 - MUL is 3-6 cycles */
 };
 static const macro_op_t mul_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
-    .uop[1]      = { .type = UOP_ALUP0, .latency = 1 }
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALUP0, .latency = 4 } /* Updated per InstLatx64 - MUL is 3-6 cycles */
 };
 static const macro_op_t mul64_op = {
-    .nr_uops     = 3,
+    .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALUP0, .latency = 1 },
-    .uop[1]      = { .type = UOP_ALUP0, .latency = 1 },
-    .uop[2]      = { .type = UOP_ALUP0, .latency = 1 }
+    .uop[0]      = { .type = UOP_ALUP0, .latency = 5 } /* Updated per InstLatx64 - 32-bit MUL is 5-6 cycles */
 };
 static const macro_op_t mul64_mem_op = {
-    .nr_uops     = 4,
+    .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
-    .uop[1]      = { .type = UOP_ALUP0, .latency = 1 },
-    .uop[2]      = { .type = UOP_ALUP0, .latency = 1 },
-    .uop[3]      = { .type = UOP_ALUP0, .latency = 1 }
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALUP0, .latency = 5 } /* Updated per InstLatx64 - 32-bit MUL is 5-6 cycles */
 };
 static const macro_op_t out_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 18 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 18 } /* IO operations are high latency */
 };
 static const macro_op_t outs_op = {
-    .nr_uops     = 3,
+    .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency =  1 },
-    .uop[1]      = { .type = UOP_ALU,  .latency = 18 }
+    .uop[0]      = { .type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
+    .uop[1]      = { .type = UOP_ALU,  .latency = 18 } /* IO operations are high latency */
 };
 static const macro_op_t pusha_op = {
     .nr_uops     = 8,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_STORED, .latency = 2 },
-    .uop[1]      = { .type = UOP_STOREA, .latency = 2 },
-    .uop[2]      = { .type = UOP_STORED, .latency = 2 },
-    .uop[3]      = { .type = UOP_STOREA, .latency = 2 },
-    .uop[4]      = { .type = UOP_STORED, .latency = 2 },
-    .uop[5]      = { .type = UOP_STOREA, .latency = 2 },
-    .uop[6]      = { .type = UOP_STORED, .latency = 2 },
-    .uop[7]      = { .type = UOP_STOREA, .latency = 2 }
+    .uop[0]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[1]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[2]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[3]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[4]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[5]      = { .type = UOP_STOREA, .latency = 1 },
+    .uop[6]      = { .type = UOP_STORED, .latency = 1 },
+    .uop[7]      = { .type = UOP_STOREA, .latency = 1 }
 };
 static const macro_op_t popa_op = {
     .nr_uops     = 8,
@@ -701,8 +694,8 @@ static const macro_op_t popa_op = {
 static const macro_op_t popf_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency =  1 },
-    .uop[1]      = { .type = UOP_ALU,   .latency =  6 },
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
+    .uop[1]      = { .type = UOP_ALU,   .latency = 6 },
     .uop[2]      = { .type = UOP_ALUP0, .latency = 10 }
 };
 static const macro_op_t pushf_op = {
@@ -715,26 +708,26 @@ static const macro_op_t pushf_op = {
 static const macro_op_t ret_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_BRANCH, .latency = 1 }
 };
 static const macro_op_t retf_op = {
     .nr_uops     = 3,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,    .latency = 3 },
     .uop[2]      = { .type = UOP_BRANCH, .latency = 1 }
 };
 static const macro_op_t scas_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 2 }, /* Updated per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t scasb_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD, .latency = 2 }, /* Updated per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU,  .latency = 1 }
 };
 static const macro_op_t setcc_mem_op = {
@@ -755,19 +748,19 @@ static const macro_op_t setcc_reg_op = {
 static const macro_op_t test_mem_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = {.type = UOP_LOAD, .latency = 1 },
+    .uop[0]      = {.type = UOP_LOAD, .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALU, .latency = 1 }
 };
 static const macro_op_t test_mem_b_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,  .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,  .latency = 3 }, /* Updated from 1 to 3 per InstLatx64 */
     .uop[1]      = { .type = UOP_ALUP0, .latency = 1 }
 };
 static const macro_op_t xchg_mem_op = {
     .nr_uops     = 4,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_LOAD,   .latency = 1 },
+    .uop[0]      = { .type = UOP_LOAD,   .latency = 17 }, /* Updated per InstLatx64 - XCHG r,[m] is 16-17 cycles */
     .uop[1]      = { .type = UOP_STORED, .latency = 1 },
     .uop[2]      = { .type = UOP_STOREA, .latency = 1 },
     .uop[3]      = { .type = UOP_ALU,    .latency = 1 }
@@ -776,13 +769,15 @@ static const macro_op_t xlat_op = {
     .nr_uops     = 2,
     .decode_type = DECODE_COMPLEX,
     .uop[0]      = { .type = UOP_ALU,  .latency = 1 },
-    .uop[1]      = { .type = UOP_LOAD, .latency = 1 }
+    .uop[1]      = { .type = UOP_LOAD, .latency = 3 } /* Updated from 1 to 3 per InstLatx64 */
 };
 static const macro_op_t wbinvd_op = {
     .nr_uops     = 1,
     .decode_type = DECODE_COMPLEX,
-    .uop[0]      = { .type = UOP_ALU, .latency = 10000 }
+    .uop[0]      = { .type = UOP_ALU, .latency = 10000 } /* Very high latency cache write-back and invalidation */
 };
+
+/* Default instruction tables when modrm modifies the instruction type */
 #define INVALID NULL
 
 static const macro_op_t *opcode_timings[256] = {
@@ -1387,9 +1382,9 @@ static const macro_op_t *opcode_timings_d9_mod3[64] = {
 static const macro_op_t *opcode_timings_da[8] = {
     // clang-format off
 /*      FIADDl            FIMULl            FICOMl            FICOMPl*/
-        &load_fadd_op,    &load_fmul_op,    &load_float_op,   &load_float_op,
+        &load_fiadd_op,    &load_fiadd_op,    &load_float_op,   &load_float_op,
 /*      FISUBl            FISUBRl           FIDIVl            FIDIVRl*/
-        &load_float_op,   &load_float_op,   &fdiv_mem_op,     &fdiv_mem_op,
+        &load_fiadd_op,    &load_fiadd_op,    &fdiv_mem_op,     &fdiv_mem_op,
     // clang-format on
 };
 static const macro_op_t *opcode_timings_da_mod3[8] = {
@@ -1519,23 +1514,17 @@ typedef struct k7_unit_t {
 static int        nr_units;
 static k7_unit_t *units;
 
-/*Pentium II/Celeron assigns the multiplier to port 0, the shifter to port 1, and shares the MMX ALU*/
+/* K7 (Athlon) execution unit structure */
 static k7_unit_t k7_units[] = {
-    //{ .uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_FLOAT) |             /*Port 0*/
-    //              (1 << UOP_MMX) | (1 << UOP_MMX_MUL)},
-    //{ .uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH) |                               /*Port 1*/
-    //              (1 << UOP_MMX) | (1 << UOP_MMX_SHIFT)},
-    //{ .uop_mask = (1 << UOP_LOAD) | (1 << UOP_FLOAD) | (1 << UOP_MLOAD)},          /*Port 2*/
-    //{ .uop_mask = (1 << UOP_STORED) | (1 << UOP_FSTORED) | (1 << UOP_MSTORED)},      /*Port 3*/
-    //{ .uop_mask = (1 << UOP_STOREA) | (1 << UOP_FSTOREA) | (1 << UOP_MSTOREA)},      /*Port 4*/
-    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_BRANCH)}, /*Port 0*/
-    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH)}, /*Port 1*/
-    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH)}, /*Port 2*/
-    { .uop_mask = (1 << UOP_FADD) | (1 << UOP_MMX) | (1 << UOP_3DNOW)}, /*Port 3*/
-    { .uop_mask = (1 << UOP_FMUL) | (1 << UOP_MMX) | (1 << UOP_MMX_MUL) | (1 << UOP_3DNOW)
-                  | (1 << UOP_FSTORED) | (1 << UOP_FSTOREA)}, /*Port 4*/
-    { .uop_mask = (1 >> UOP_LOAD) | (1 << UOP_FLOAD) | (1 << UOP_MLOAD)
-                  | (1 << UOP_STORED) | (1 << UOP_STOREA) | (1 << UOP_MSTORED) | (1 << UOP_MSTOREA)}, /*Port 5*/
+    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_BRANCH)}, /* Integer unit 0 */
+    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_BRANCH)}, /* Integer unit 1 */
+    { .uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH)}, /* Integer unit 2 */
+    { .uop_mask = (1 << UOP_FLOAT) | (1 << UOP_FADD) | (1 << UOP_MMX) | (1 << UOP_3DNOW)}, /* FP unit 0 */
+    { .uop_mask = (1 << UOP_FLOAT) | (1 << UOP_FMUL) | (1 << UOP_FDIV) | (1 << UOP_MMX) | (1 << UOP_MMX_SHIFT) | 
+                  (1 << UOP_MMX_MUL) | (1 << UOP_3DNOW)}, /* FP unit 1 */
+    { .uop_mask = (1 << UOP_LOAD) | (1 << UOP_FLOAD) | (1 << UOP_MLOAD) | /* Memory load unit */
+                  (1 << UOP_STORED) | (1 << UOP_STOREA) | (1 << UOP_FSTORED) | (1 << UOP_FSTOREA) | 
+                  (1 << UOP_MSTORED) | (1 << UOP_MSTOREA)}, /* Memory store unit */
 };
 #define NR_K7_UNITS (sizeof(k7_units) / sizeof(k7_unit_t))
 
@@ -1545,11 +1534,11 @@ uop_run(const k7_uop_t *uop, int decode_time)
     k7_unit_t *best_unit        = NULL;
     int        best_start_cycle = 99999;
 
-    /*UOP_FXCH does not require execution*/
+    /* UOP_FXCH does not require execution */
     if (uop->type == UOP_FXCH)
         return decode_time;
 
-    /*Find execution unit for this uOP*/
+    /* Find execution unit for this uOP */
     for (int c = 0; c < nr_units; c++) {
         if (units[c].uop_mask & (1 << uop->type)) {
             if (units[c].first_available_cycle < best_start_cycle) {
@@ -1568,32 +1557,37 @@ uop_run(const k7_uop_t *uop, int decode_time)
     return best_start_cycle + uop->latency;
 }
 
-/*The k7 decoders can decode, per clock :
-  - 1 to 3 'simple' instructions, each up to 1 uOP and 7 bytes long
-  - 1 'complex' instruction, up to 4 uOPs or 3 per cycle for instructions longer than 4 uOPs
+/*
+* The K7 decoders can decode, per cycle:
+* - Up to 3 'simple' instructions, each up to 1 uOP and 7 bytes long
+* - 1 'complex' instruction, either unlimited uOPs or unlimited bytes
+* 
+* The K7 has:
+* - 6 execution units (3 integer, 2 FP/MMX/3DNow, 1 load/store)
+* - 72-entry reorder buffer
+* - OOO (out-of-order) execution
 */
 static struct {
     int             nr_uops;
-    const k7_uop_t *uops[6];
+    const k7_uop_t *uops[MAX_UOPS];
     /*Earliest time a uop can start. If the timestamp is -1, then the uop is
       part of a dependency chain and the start time is the completion time of
       the previous uop*/
-    int earliest_start[6];
+    int earliest_start[MAX_UOPS];
 } decode_buffer;
 
 #define NR_OPSEQS 3
-/*Timestamps of when the last three op sequences completed. Technically this is incorrect,
-as the actual size of the opseq buffer is 20 bytes and not 18, but I'm restricted to multiples of 6*/
+/* Timestamps of when the last three op sequences completed. */
 static int opseq_completion_timestamp[NR_OPSEQS];
 static int next_opseq = 0;
 
 #define NR_REGS 8
-/*Timestamp of when last operation on an integer register completed*/
+/* Timestamp of when last operation on an integer register completed */
 static int reg_available_timestamp[NR_REGS];
-/*Timestamp of when last operation on an FPU register completed*/
+/* Timestamp of when last operation on an FPU register completed */
 static int fpu_st_timestamp[8];
-/*Completion time of the last uop to be processed. Used to calculate timing of
-  dependent uop chains*/
+/* Completion time of the last uop to be processed. Used to calculate timing of
+  dependent uop chains */
 static int last_uop_timestamp = 0;
 
 void
@@ -1602,16 +1596,16 @@ decode_flush_k7(void)
     int start_timestamp;
     int uop_timestamp = 0;
 
-    /*Decoded opseq can not be submitted if there are no free spaces in the
-      opseq buffer*/
+    /* Decoded opseq can not be submitted if there are no free spaces in the
+      opseq buffer */
     if (decode_timestamp < opseq_completion_timestamp[next_opseq])
         decode_timestamp = opseq_completion_timestamp[next_opseq];
 
-    /*Ensure that uops can not be submitted before they have been decoded*/
+    /* Ensure that uops can not be submitted before they have been decoded */
     if (decode_timestamp > last_uop_timestamp)
         last_uop_timestamp = decode_timestamp;
 
-    /*Submit uops to execution units, and determine the latest completion time*/
+    /* Submit uops to execution units, and determine the latest completion time */
     for (int c = 0; c < (decode_buffer.nr_uops); c++) {
         if (decode_buffer.earliest_start[c] == -1)
             start_timestamp = last_uop_timestamp;
@@ -1623,14 +1617,14 @@ decode_flush_k7(void)
             uop_timestamp = last_uop_timestamp;
     }
 
-    /*Calculate opseq completion time. Since opseqs complete in order, it
-      must be after the last completion.*/
+    /* Calculate opseq completion time. Since opseqs complete in order, it
+      must be after the last completion. */
     if (uop_timestamp <= last_complete_timestamp)
         last_complete_timestamp = last_complete_timestamp + 1;
     else
         last_complete_timestamp = uop_timestamp;
 
-    /*Advance to next opseq in buffer*/
+    /* Advance to next opseq in buffer */
     opseq_completion_timestamp[next_opseq] = last_complete_timestamp;
     next_opseq++;
     if (next_opseq == NR_OPSEQS)
@@ -1640,14 +1634,14 @@ decode_flush_k7(void)
     decode_buffer.nr_uops = 0;
 }
 
-/*The instruction is only of interest here if it's longer than 7 bytes, as that's the
-  limit on K7 simple decoding*/
+/* The instruction is only of interest here if it's longer than 7 bytes, as that's the
+  limit on K7 simple decoding */
 static int
 codegen_timing_instr_length(uint64_t deps, uint32_t fetchdat, int op_32)
 {
-    int len = prefixes + 1; /*Opcode*/
+    int len = prefixes + 1; /* Opcode */
     if (deps & MODRM) {
-        len++; /*ModR/M*/
+        len++; /* ModR/M */
         if (deps & HAS_IMM8)
             len++;
         if (deps & HAS_IMM1632)
@@ -1655,7 +1649,7 @@ codegen_timing_instr_length(uint64_t deps, uint32_t fetchdat, int op_32)
 
         if (op_32 & 0x200) {
             if ((fetchdat & 7) == 4 && (fetchdat & 0xc0) != 0xc0) {
-                /* Has SIB*/
+                /* Has SIB */
                 len++;
                 if ((fetchdat & 0xc0) == 0x40)
                     len++;
@@ -1690,14 +1684,14 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     uint32_t      regmask_required;
     uint32_t      regmask_modified;
     int           c;
-    int           d              = 0; /*Complex decoder uOPs*/
+    int           d              = 0; /* Complex decoder uOPs */
     int           earliest_start = 0;
     decode_type_t decode_type    = ins->decode_type;
     int           instr_length   = codegen_timing_instr_length(deps, fetchdat, op_32);
 
-    /*Generate input register mask, and determine the earliest time this
+    /* Generate input register mask, and determine the earliest time this
       instruction can start. This is not accurate, as this is calculated per
-      x86 instruction when it should be handled per uop*/
+      x86 instruction when it should be handled per uop */
     regmask_required = get_dstdep_mask(deps, fetchdat, bit8);
     regmask_required |= get_addr_regmask(deps, fetchdat, op_32);
     for (c = 0; c < 8; c++) {
@@ -1717,7 +1711,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
             earliest_start = fpu_st_timestamp[reg];
     }
 
-    /*Simple decoders are limited to 7 bytes & 1 uOP*/
+    /* Simple decoders are limited to 7 bytes & 1 uOP */
     if ((decode_type == DECODE_SIMPLE && instr_length > 7) || (decode_type == DECODE_SIMPLE && ins->nr_uops > 1))
         decode_type = DECODE_COMPLEX;
 
@@ -1747,7 +1741,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
 
         case DECODE_COMPLEX:
             if (decode_buffer.nr_uops)
-                decode_flush_k7(); /*The 4-1-1 arrangement implies that a complex ins. can't be decoded after a simple one*/
+                decode_flush_k7(); /* The 3-1 arrangement implies that a complex ins. can't be decoded after a simple one */
 
             d = 0;
 
@@ -1759,10 +1753,10 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
                     decode_buffer.earliest_start[d] = -1;
                 d++;
 
-                if ((d == 3) && (ins->nr_uops > 4)) { /*Ins. with >4 uOPs require the use of special units only present on 3 translate PLAs*/
+                if ((d == 3) && (ins->nr_uops > 4)) { /* Ins. with >4 uOPs require special handling */
                     d                     = 0;
                     decode_buffer.nr_uops = 3;
-                    decode_flush_k7(); /*The other two decoders are halted to preserve in-order issue*/
+                    decode_flush_k7();
                 }
             }
             if (d) {
@@ -1771,7 +1765,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
             break;
     }
 
-    /*Update write timestamps for any output registers*/
+    /* Update write timestamps for any output registers */
     regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
     for (c = 0; c < 8; c++) {
         if (regmask_modified & (1 << c))

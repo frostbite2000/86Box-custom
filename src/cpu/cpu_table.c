@@ -6156,6 +6156,46 @@ const cpu_family_t cpu_families[] = {
         }
     },
     {
+        .package       = CPU_PKG_SOCKETA,
+        .manufacturer  = "AMD",
+        .name          = "Athlon XP (Palomino)",
+        .internal_name = "athlonxp_palomino",
+        .cpus          = (const CPU[]) {
+            { "1500+", CPU_ATHLONXP, fpus_internal, 1333333333, 10.0, 1750, 0x662, 0x662, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 45, 45, 15, 15, 60 },
+            { "1600+", CPU_ATHLONXP, fpus_internal, 1400000000, 10.5, 1750, 0x662, 0x662, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 47, 47, 15, 15, 60 },
+            { "1800+", CPU_ATHLONXP, fpus_internal, 1533333333, 11.5, 1750, 0x662, 0x662, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "1900+", CPU_ATHLONXP, fpus_internal, 1600000000, 12.0, 1750, 0x662, 0x662, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "2000+", CPU_ATHLONXP, fpus_internal, 1667777777, 12.5, 1750, 0x662, 0x662, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { .name = "", 0 }
+        }
+    },
+    {
+        .package       = CPU_PKG_SOCKETA,
+        .manufacturer  = "AMD",
+        .name          = "Athlon XP (Thoroughbred)",
+        .internal_name = "athlonxp_thoroughbred",
+        .cpus          = (const CPU[]) {
+            { "1800+", CPU_ATHLONXP, fpus_internal, 1533333333, 11.5, 1600, 0x680, 0x680, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 45, 45, 15, 15, 60 },
+            { "2100+", CPU_ATHLONXP, fpus_internal, 1733333333, 13.0, 1600, 0x680, 0x680, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "2200+", CPU_ATHLONXP, fpus_internal, 1800000000, 13.5, 1650, 0x680, 0x680, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "2400+", CPU_ATHLONXP, fpus_internal, 2000000000, 15.0, 1650, 0x681, 0x681, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { .name = "", 0 }
+        }
+    },
+    {
+        .package       = CPU_PKG_SOCKETA,
+        .manufacturer  = "AMD",
+        .name          = "Athlon XP (Barton)",
+        .internal_name = "athlonxp_barton",
+        .cpus          = (const CPU[]) {
+            { "2500+", CPU_ATHLONXP, fpus_internal, 1833333333, 11.0, 1650, 0x6A0, 0x6A0, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 45, 45, 15, 15, 60 },
+            { "2600+", CPU_ATHLONXP, fpus_internal, 1917777777, 11.5, 1650, 0x6A0, 0x6A0, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "2800+", CPU_ATHLONXP, fpus_internal, 2083333333, 12.5, 1650, 0x6A0, 0x6A0, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { "3200+", CPU_ATHLONXP, fpus_internal, 2200000000, 11.0, 1650, 0x6A0, 0x6A0, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 49, 49, 15, 15, 60 },
+            { .name = "", 0 }
+        }
+    },
+    {
         .package       = CPU_PKG_SOCKET5_7,
         .manufacturer  = "Cyrix",
         .name          = "Cx6x86",
