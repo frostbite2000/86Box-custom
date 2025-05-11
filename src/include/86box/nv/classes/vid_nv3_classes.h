@@ -422,6 +422,7 @@ typedef struct nv3_object_class_006
     uint32_t color0;                // Some 32-bit format (argb?)
     uint32_t color1;                // bit0=color0, bit1=color1
     uint32_t pattern[2];            // bit0=color0, bit1=color1
+    uint32_t format;
 } nv3_pattern_t;
 
 /* 
