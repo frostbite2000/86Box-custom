@@ -466,3 +466,62 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             break;
     }
 }
+
+/* Current renderer, called for real-time buffer updates */
+void nv3_render_current_bpp(svga_t *svga, nv3_coord_16_t position, nv3_coord_16_t size, nv3_grobj_t grobj, bool run_render_check, bool use_destination_buffer)
+{
+    if (!nv3) return;
+
+    uint32_t buffer_id = 0;
+    if (use_destination_buffer) {
+        /* Determine destination buffer from enabled bits */
+        if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER1_ENABLED) & 0x01) buffer_id = 1;  
+        if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER2_ENABLED) & 0x01) buffer_id = 2;  
+        if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER3_ENABLED) & 0x01) buffer_id = 3;
+    }
+
+    /* Get pixel format for this buffer */
+    uint32_t fmt = nv3->pgraph.bpixel[buffer_id];
+    if (!(fmt & (1 << NV3_BPIXEL_FORMAT_IS_VALID))) return;
+
+    fmt &= 0x03; /* Get just the format bits */
+    uint32_t addr = nv3_render_get_vram_address_for_buffer(position, buffer_id);
+
+    /* Update dirty region */
+    switch (fmt) {
+        case bpixel_fmt_8bit:
+            /* 8bpp uses full bytes */
+            svga->changedvram[addr >> 12] = changeframecount;
+            break;
+        case bpixel_fmt_16bit:
+            /* 16bpp spans two bytes */
+            svga->changedvram[addr >> 11] = changeframecount;
+            break;
+        case bpixel_fmt_32bit:
+            /* 32bpp spans four bytes */
+            svga->changedvram[addr >> 10] = changeframecount; 
+            break;
+        default:
+            nv_log("Unknown bpixel format %d", fmt);
+            break;
+    }
+}
+
+/* DFB (Dumb Frame Buffer) update handlers */
+void nv3_render_current_bpp_dfb_8(uint32_t address) 
+{
+    if (!nv3) return;
+    nv3->nvbase.svga.changedvram[address >> 12] = changeframecount;
+}
+
+void nv3_render_current_bpp_dfb_16(uint32_t address)
+{
+    if (!nv3) return;
+    nv3->nvbase.svga.changedvram[address >> 11] = changeframecount;
+}
+
+void nv3_render_current_bpp_dfb_32(uint32_t address)
+{
+    if (!nv3) return;
+    nv3->nvbase.svga.changedvram[address >> 10] = changeframecount;
+}
