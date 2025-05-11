@@ -333,6 +333,8 @@ uint32_t nv3_render_read_pixel_32(nv3_coord_16_t position, nv3_grobj_t grobj)
 /* Plots a pixel. */
 void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t grobj)
 {
+    if (!nv3) return;
+
     bool alpha_enabled = (grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_ALPHA) & 0x01;
     uint32_t current_buffer = (grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_SRC_BUFFER) & 0x03;
     uint32_t buffer_fmt = (nv3->pgraph.bpixel[current_buffer] & 0x03);
@@ -340,19 +342,27 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
     int32_t clip_end_x = nv3->pgraph.clip_start.x + nv3->pgraph.clip_size.x;
     int32_t clip_end_y = nv3->pgraph.clip_start.y + nv3->pgraph.clip_size.y;
 
-    // Basic clipping 
+    // Add bounds checking
+    if (position.x < 0 || position.y < 0 || 
+        position.x >= nv3->nvbase.svga.monitor->target_buffer->w ||
+        position.y >= nv3->nvbase.svga.monitor->target_buffer->h)
+        return;
+
+    // Basic clipping with additional validation
     if (position.x < nv3->pgraph.clip_start.x || position.x >= clip_end_x ||
         position.y < nv3->pgraph.clip_start.y || position.y >= clip_end_y)
         return;
 
-    // Get the address to write to
+    // Get the address to write to with bounds check
     uint32_t vram_address = nv3_render_get_vram_address(position, grobj);
+    if (vram_address >= nv3->nvbase.svga.vram_max)
+        return;
 
-    // Handle chroma key if enabled
+    // Do chroma test first
     if (!nv3_render_chroma_test(color, grobj))
         return;
 
-    // Write the pixel based on the buffer format
+    // Write the pixel based on the buffer format with validation
     switch (buffer_fmt) {
         case 0x01: // 8bpp
             nv3->nvbase.svga.vram[vram_address] = color & 0xFF;
@@ -361,6 +371,8 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             
         case 0x02: // 15/16bpp
             {
+                if ((vram_address + 1) >= nv3->nvbase.svga.vram_max)
+                    return;
                 uint16_t* vram_16 = (uint16_t*)(nv3->nvbase.svga.vram);
                 vram_16[vram_address >> 1] = color & 0xFFFF;
                 nv3_render_current_bpp_dfb_16(vram_address);
@@ -369,6 +381,8 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             
         case 0x04: // 32bpp
             {
+                if ((vram_address + 3) >= nv3->nvbase.svga.vram_max)
+                    return;
                 uint32_t* vram_32 = (uint32_t*)(nv3->nvbase.svga.vram);
                 vram_32[vram_address >> 2] = color;
                 nv3_render_current_bpp_dfb_32(vram_address);
@@ -384,36 +398,58 @@ void nv3_render_current_bpp(svga_t *svga, nv3_coord_16_t position, nv3_coord_16_
 
     uint32_t buffer_id = 0;
     if (use_destination_buffer) {
-        /* Determine destination buffer from enabled bits */
+        /* Determine destination buffer from enabled bits with validation */
         if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER1_ENABLED) & 0x01) buffer_id = 1;  
         if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER2_ENABLED) & 0x01) buffer_id = 2;  
         if ((grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER3_ENABLED) & 0x01) buffer_id = 3;
     }
 
-    /* Get pixel format for this buffer */
+    /* Get pixel format for this buffer with validation */
     uint32_t fmt = nv3->pgraph.bpixel[buffer_id];
     if (!(fmt & (1 << NV3_BPIXEL_FORMAT_IS_VALID))) return;
-
+    
     fmt &= 0x03; /* Get just the format bits */
-    uint32_t addr = nv3_render_get_vram_address_for_buffer(position, buffer_id);
 
-    /* Update dirty region */
+    /* Add bounds validation */
+    if (position.x < 0 || position.y < 0 ||
+        position.x >= nv3->nvbase.svga.monitor->target_buffer->w ||
+        position.y >= nv3->nvbase.svga.monitor->target_buffer->h)
+        return;
+
+    /* Handle size validation */
+    if (size.x <= 0 || size.y <= 0 ||
+        position.x + size.x > nv3->nvbase.svga.monitor->target_buffer->w ||
+        position.y + size.y > nv3->nvbase.svga.monitor->target_buffer->h)
+        return;
+
+    /* Calculate valid address with bounds checking */
+    uint32_t addr = nv3_render_get_vram_address_for_buffer(position, buffer_id);
+    if (addr >= nv3->nvbase.svga.vram_max)
+        return;
+
+    /* Update dirty region with proper format handling */
     switch (fmt) {
         case bpixel_fmt_8bit:
             /* 8bpp uses full bytes */
-            svga->changedvram[addr >> 12] = changeframecount;
+            if (addr >> 12 < svga->vram_display_mask)
+                svga->changedvram[addr >> 12] = changeframecount;
             break;
+            
         case bpixel_fmt_16bit:
             /* 16bpp spans two bytes */
-            svga->changedvram[addr >> 11] = changeframecount;
+            if (addr >> 11 < svga->vram_display_mask) 
+                svga->changedvram[addr >> 11] = changeframecount;
             break;
+            
         case bpixel_fmt_32bit:
             /* 32bpp spans four bytes */
-            svga->changedvram[addr >> 10] = changeframecount; 
+            if (addr >> 10 < svga->vram_display_mask)
+                svga->changedvram[addr >> 10] = changeframecount; 
             break;
+            
         default:
             nv_log("Unknown bpixel format %d", fmt);
-            break;
+            return;
     }
 }
 
