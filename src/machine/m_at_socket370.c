@@ -809,3 +809,55 @@ machine_at_s2080_init(const machine_t *model)
 
     return ret;
 }
+
+/*
+ * Gigabyte GA-6OXET
+ *
+ * North Bridge: Intel 815EP
+ * Super I/O: ITE 8712
+ * BIOS: AwardBIOS 6.00PG
+ * Notes: actually Vlask's PC, see also "Worst Game Graphics Cards - Matrox Mystique 220" by Vlask
+ */
+int
+machine_at_ga6oxet_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/ga6oxet/6oxet.f7",
+                           0x000c0000, 262144, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init_ex(model, 2);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_bus_slot(0, 0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_bus_slot(0, 0x01, PCI_CARD_AGPBRIDGE,   1, 2, 0, 0);
+    pci_register_bus_slot(0, 0x1e, PCI_CARD_BRIDGE,      0, 0, 0, 0);
+    pci_register_bus_slot(0, 0x1f, PCI_CARD_SOUTHBRIDGE, 1, 2, 8, 4);
+    pci_register_bus_slot(1, 0x00, PCI_CARD_AGP,         1, 2, 3, 4);
+    pci_register_bus_slot(0, 0x04, PCI_CARD_NORMAL,      2, 3, 4, 5);
+    pci_register_bus_slot(0, 0x05, PCI_CARD_NORMAL,      3, 4, 5, 6);
+    pci_register_bus_slot(0, 0x06, PCI_CARD_NORMAL,      4, 5, 6, 7);
+    pci_register_bus_slot(0, 0x07, PCI_CARD_NORMAL,      5, 6, 7, 8);
+
+    device_add(&intel_815ep_device);        /* Intel 815EP MCH */
+    device_add(&intel_ich2_device);         /* Intel ICH2 */
+    device_add(&it8712_device);             /* ITE 8712 */
+    device_add(&sst_flash_49lf002_device);  /* SST 4Mbit Firmware Hub */
+    intel_815ep_spd_init();                 /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#endif
+    device_add(&w83791sd_device);       /* fans: CPU, Power, System; temperatures: System, CPU, unused */
+    hwm_values.temperatures[2] = 0;    /* unused */
+    hwm_values.voltages[1]     = 1500; /* VGTL */
+
+    if (sound_card_current[0] == SOUND_INTERNAL) {
+        device_add(machine_get_snd_device(machine));
+        device_add(&stac9700_device);
+    }
+
+    return ret;
+}

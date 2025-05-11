@@ -81,6 +81,15 @@ static const struct {
         .vendor_regs = (const ac97_vendor_reg_t[]) {{0, 0x5e, 0x0000, 0x01b0}, {0, 0x60, 0x0023, 0x0001}, {0, 0x68, 0x0000, 0xdfff}, {0}}
     },
     {
+        .device      = &stac9700_device,
+        .misc_flags  = AC97_AUXOUT | AC97_MONOOUT | AC97_PCBEEP | AC97_PHONE | AC97_VIDEO | AC97_AUXIN | AC97_MS | AC97_LPBK,
+        .reset_flags = (26 << AC97_3D_SHIFT) | AC97_DAC_18B | AC97_ADC_18B,
+        .extid_flags = AC97_SDAC,
+        .pcsr_mask   = 0xff,
+        .eascr_mask  = 0x02,
+        .vendor_regs = (const ac97_vendor_reg_t[]) {{0, 0x6c, 0x0000, 0x0003}, {0, 0x74, 0x0000, 0x0003}, {0}}
+    },
+    {
         .device      = &stac9708_device,
         .misc_flags  = AC97_AUXOUT | AC97_MONOOUT | AC97_PCBEEP | AC97_PHONE | AC97_VIDEO | AC97_AUXIN | AC97_MS | AC97_LPBK,
         .reset_flags = (26 << AC97_3D_SHIFT) | AC97_DAC_18B | AC97_ADC_18B,
@@ -713,6 +722,20 @@ const device_t cs4297a_device = {
     .internal_name = "cs4297a",
     .flags         = DEVICE_AC97,
     .local         = AC97_CODEC_CS4297A,
+    .init          = ac97_codec_init,
+    .close         = ac97_codec_close,
+    .reset         = ac97_codec_reset,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t stac9700_device = {
+    .name          = "SigmaTel STAC9700",
+    .internal_name = "stac9700",
+    .flags         = DEVICE_AC97,
+    .local         = AC97_CODEC_STAC9700,
     .init          = ac97_codec_init,
     .close         = ac97_codec_close,
     .reset         = ac97_codec_reset,

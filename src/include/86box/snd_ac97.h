@@ -97,6 +97,7 @@
 #define AC97_CODEC_ALC100   AC97_VENDOR_ID('A', 'L', 'C', 0x20)
 #define AC97_CODEC_CS4297   AC97_VENDOR_ID('C', 'R', 'Y', 0x03)
 #define AC97_CODEC_CS4297A  AC97_VENDOR_ID('C', 'R', 'Y', 0x11)
+#define AC97_CODEC_STAC9700 AC97_VENDOR_ID(0x83, 0x84, 0x76, 0x00)
 #define AC97_CODEC_STAC9708 AC97_VENDOR_ID(0x83, 0x84, 0x76, 0x08)
 #define AC97_CODEC_STAC9721 AC97_VENDOR_ID(0x83, 0x84, 0x76, 0x09)
 #define AC97_CODEC_TR28023  AC97_VENDOR_ID('T', 'R', 'A', 0x03)
@@ -147,6 +148,7 @@ extern const device_t alc100_device;
 extern const device_t cs4297_device;
 extern const device_t cs4297a_device;
 #    define ct1297_device tr28023_device
+extern const device_t stac9700_device;
 extern const device_t stac9708_device;
 extern const device_t stac9721_device;
 extern const device_t tr28023_device;

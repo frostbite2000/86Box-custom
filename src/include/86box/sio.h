@@ -71,6 +71,9 @@ extern const device_t i82091aa_ide_device;
 /* ITE IT8702 */
 extern const device_t it8702_device;
 
+/* ITE IT8712 */
+extern const device_t it8712_device;
+
 /* National Semiconductor NSC366 (PC87366) */
 extern const device_t nsc366_device;
 extern const device_t nsc366_4f_device;

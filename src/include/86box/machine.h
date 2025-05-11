@@ -873,6 +873,7 @@ extern int machine_at_j815epda_init(const machine_t *);
 extern int machine_at_m6tsl_init(const machine_t *);
 extern int machine_at_m6tss_init(const machine_t *);
 extern int machine_at_s2080_init(const machine_t *);
+extern int machine_at_ga6oxet_init(const machine_t *);
 
 /* m_at_slota.c */
 extern int machine_at_k7m_init(const machine_t *);

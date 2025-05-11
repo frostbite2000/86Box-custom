@@ -39,8 +39,9 @@
 #define LM78_AS99127F_REV2      0x080000
 #define LM78_W83782D            0x100000
 #define LM78_P5A                0x200000
+#define LM78_W83791SD           0x400000
 #define LM78_AS99127F           (LM78_AS99127F_REV1 | LM78_AS99127F_REV2)     /* mask covering both _REV1 and _REV2 */
-#define LM78_WINBOND            (LM78_W83781D | LM78_AS99127F | LM78_W83782D) /* mask covering all Winbond variants */
+#define LM78_WINBOND            (LM78_W83781D | LM78_AS99127F | LM78_W83782D | LM78_W83791SD) /* mask covering all Winbond variants */
 #define LM78_WINBOND_VENDOR_ID  ((dev->local & LM78_AS99127F_REV1) ? 0x12c3 : 0x5ca3)
 #define LM78_WINBOND_BANK       (dev->regs[0x4e] & 0x07)
 
@@ -314,6 +315,8 @@ lm78_reset(void *priv)
             dev->regs[0x58] = 0x10;
         } else if (dev->local & LM78_W83782D) {
             dev->regs[0x58] = 0x30;
+        } else if (dev->local & LM78_W83791SD) {
+            dev->regs[0x58] = 0x71;
         }
     } else {
         dev->regs[0x49] = 0x40;
@@ -929,6 +932,20 @@ const device_t w83782d_device = {
     .internal_name = "w83783d",
     .flags         = DEVICE_ISA,
     .local         = 0x290 | LM78_I2C | LM78_W83782D,
+    .init          = lm78_init,
+    .close         = lm78_close,
+    .reset         = lm78_reset,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t w83791sd_device = {
+    .name          = "Winbond W83791SD Hardware Monitor",
+    .internal_name = "w83791sd",
+    .flags         = DEVICE_ISA,
+    .local         = 0x290 | LM78_I2C | LM78_W83791SD,
     .init          = lm78_init,
     .close         = lm78_close,
     .reset         = lm78_reset,

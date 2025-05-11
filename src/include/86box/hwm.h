@@ -68,6 +68,7 @@ extern const device_t w83781d_p5a_device;
 extern const device_t as99127f_device;
 extern const device_t as99127f_rev2_device;
 extern const device_t w83782d_device;
+extern const device_t w83791sd_device;
 
 extern const device_t gl518sm_2c_device;
 extern const device_t gl518sm_2d_device;
