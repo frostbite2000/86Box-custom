@@ -98,8 +98,7 @@ void nv3_render_blit_image(uint32_t color, nv3_grobj_t grobj)
             break;
         // just one pixel in 32bpp
         case 32: 
-            pixel0 = color;
-            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel0, grobj);
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, color, grobj);
             nv3->pgraph.image_current_position.x++;
             nv3_class_011_check_line_bounds();
 
@@ -207,7 +206,7 @@ void nv3_render_blit_screen2screen(nv3_grobj_t grobj)
         else if (nv3->pgraph.blit.point_out.y < nv3->pgraph.blit.point_in.y)
             blit_size.y = (nv3->pgraph.blit.point_in.y - nv3->pgraph.blit.point_out.y) + nv3->pgraph.blit.size.y;
         else
-            blit_size.y = nv3->pgraph.blit.size.y; 
+            blit_size.y = nv3->pgraph.blit.size.y;
 
         if (nv3->pgraph.blit.point_out.x > nv3->pgraph.blit.point_in.x)
             blit_position.x = nv3->pgraph.blit.point_in.x;
@@ -218,7 +217,6 @@ void nv3_render_blit_screen2screen(nv3_grobj_t grobj)
             blit_position.y = nv3->pgraph.blit.point_in.y;
         else if (nv3->pgraph.blit.point_out.y <= nv3->pgraph.blit.point_in.y) // equals case, just use out 
             blit_position.y = nv3->pgraph.blit.point_out.y;
-
     }
 
     /* If the BUFFER_ADDRESS of the last buffer is not the DBA, we don't *actually* want to draw this, so let's not

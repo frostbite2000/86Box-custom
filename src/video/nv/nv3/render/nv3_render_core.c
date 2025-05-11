@@ -238,7 +238,6 @@ uint32_t nv3_render_get_vram_address(nv3_coord_16_t position, nv3_grobj_t grobj)
     return pixel_addr_vram;
 }
 
-
 /* Combine the current buffer with the pitch to get the address in the video ram for a specific position relative to a specific framebuffer */
 uint32_t nv3_render_get_vram_address_for_buffer(nv3_coord_16_t position, uint32_t buffer)
 {
@@ -351,7 +350,9 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
 
     // Handle chroma key if enabled
     if (!nv3_render_chroma_test(color, grobj))
-        return;    // Write the pixel based on the buffer format
+        return;
+
+    // Write the pixel based on the buffer format
     switch (buffer_fmt) {
         case 0x01: // 8bpp
             nv3->nvbase.svga.vram[vram_address] = color & 0xFF;
