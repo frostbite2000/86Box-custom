@@ -351,18 +351,18 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
 
     // Handle chroma key if enabled
     if (!nv3_render_chroma_test(color, grobj))
-        return;
-
-    // Write the pixel based on the buffer format
+        return;    // Write the pixel based on the buffer format
     switch (buffer_fmt) {
         case 0x01: // 8bpp
             nv3->nvbase.svga.vram[vram_address] = color & 0xFF;
+            nv3_render_current_bpp_dfb_8(vram_address);
             break;
             
         case 0x02: // 15/16bpp
             {
                 uint16_t* vram_16 = (uint16_t*)(nv3->nvbase.svga.vram);
                 vram_16[vram_address >> 1] = color & 0xFFFF;
+                nv3_render_current_bpp_dfb_16(vram_address);
             }
             break;
             
@@ -370,12 +370,10 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             {
                 uint32_t* vram_32 = (uint32_t*)(nv3->nvbase.svga.vram);
                 vram_32[vram_address >> 2] = color;
+                nv3_render_current_bpp_dfb_32(vram_address);
             }
             break;
     }
-
-    // Mark this region as dirty for screen update
-    nv3_render_current_bpp_dfb_update(vram_address);
 }
 
 /* Current renderer, called for real-time buffer updates */
