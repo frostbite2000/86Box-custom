@@ -52,61 +52,42 @@ nv3_color_expanded_t nv3_render_expand_color(uint32_t color, nv3_grobj_t grobj)
 
     nv_log_verbose_only("Expanding Colour 0x%08x using pgraph_pixel_format 0x%x alpha enabled=%d\n", color, format, alpha_enabled);
 
-    
     // default to fully opaque in case alpha is disabled
     color_final.a = 0xFF;
 
     switch (format)
     {
-        // ALL OF THESE TYPES ARE 32 BITS IN SIZE
-
-        // 555
-        case nv3_pgraph_pixel_format_r5g5b5:
-            // "stretch out" the colour
-
-            color_final.a = (color >> 15) & 0x01;       // will be ignored if alpha_enabled isn't used 
-            color_final.r = ((color >> 10) & 0x1F) << 5;
-            color_final.g = ((color >> 5) & 0x1F) << 5;
-            color_final.b = (color & 0x1F) << 5;
-
+        case 0x01: // 8bpp palettized
+            color_final.i8 = color & 0xFF;
             break;
-        // 888 (standard colour + 8-bit alpha)
-        case nv3_pgraph_pixel_format_r8g8b8:
+            
+        case 0x02: // 15bpp RGB
+            color_final.r = ((color >> 10) & 0x1F) << 3;
+            color_final.g = ((color >> 5) & 0x1F) << 3;
+            color_final.b = ((color) & 0x1F) << 3;
             if (alpha_enabled)
-                color_final.a = ((color >> 24) & 0xFF) * 4;
-
-            color_final.r = ((color >> 16) & 0xFF) * 4;
-            color_final.g = ((color >> 8) & 0xFF) * 4;
-            color_final.b = (color & 0xFF) * 4;
-
-            break;        case nv3_pgraph_pixel_format_r10g10b10:
-            color_final.a = (color >> 31) & 0x01;
-            color_final.r = (color >> 20) & 0x3FF;
-            color_final.g = (color >> 10) & 0x3FF;
-            color_final.b = color & 0x3FF;
-
+                color_final.a = ((color >> 15) & 0x01) ? 0xFF : 0x00;
             break;
-        case nv3_pgraph_pixel_format_y8:
-            /* Indexed mode */
-            color_final.a = (color >> 8) & 0xFF;
-
-            // yuv
-            color_final.r = color_final.g = color_final.b = (color & 0xFF) * 4; // convert to rgb10
+            
+        case 0x03: // 16bpp RGB
+            color_final.r = ((color >> 11) & 0x1F) << 3;
+            color_final.g = ((color >> 5) & 0x3F) << 2;
+            color_final.b = ((color) & 0x1F) << 3;
             break;
-        case nv3_pgraph_pixel_format_y16:
-            color_final.a = (color >> 16) & 0xFFFF;
-
-            // yuv
-            color_final.r = color_final.g = color_final.b = (color & 0xFFFF) * 4; // convert to rgb10
+            
+        case 0x04: // 32bpp RGBA
+            color_final.r = (color >> 16) & 0xFF;
+            color_final.g = (color >> 8) & 0xFF;
+            color_final.b = color & 0xFF;
+            if (alpha_enabled)
+                color_final.a = (color >> 24) & 0xFF;
             break;
+            
         default:
-            warning("nv3_render_expand_color unknown format %d", format);
+            // i8 is a union under i16
+            color_final.i16 = (color & 0xFFFF);
             break;
-        
     }
-
-    // i8 is a union under i16
-    color_final.i16 = (color & 0xFFFF);
 
     return color_final;
 }
@@ -123,36 +104,35 @@ uint32_t nv3_render_downconvert_color(nv3_grobj_t grobj, nv3_color_expanded_t co
 
     switch (format)
     {
-        case nv3_pgraph_pixel_format_r5g5b5:
-            packed_color = (color.r >> 5) << 10 | 
-                           (color.g >> 5) << 5 |
-                           (color.b >> 5);
-
+        case 0x01: // 8bpp palettized
+            packed_color = color.i8;
             break;
-        case nv3_pgraph_pixel_format_r8g8b8:
-            packed_color = (color.a) << 24 | // is this a thing?
-                           (color.r >> 2) << 16 |
-                           (color.g >> 2) << 8 |
-                           color.b;
+            
+        case 0x02: // 15bpp RGB
+            packed_color = ((color.r >> 3) << 10) |
+                         ((color.g >> 3) << 5) |
+                         (color.b >> 3);
+            if (alpha_enabled)
+                packed_color |= ((color.a > 0x7F) ? 1 : 0) << 15;
             break;
-        case nv3_pgraph_pixel_format_r10g10b10:
-            /* sometimes alpha isn't used but we should incorporate it anyway */
-            if (color.a > 0x00) packed_color | (1 << 31);
-
-            packed_color |= (color.r << 30);
-            packed_color |= (color.g << 20);
-            packed_color |= (color.b << 10);
+            
+        case 0x03: // 16bpp RGB
+            packed_color = ((color.r >> 3) << 11) |
+                         ((color.g >> 2) << 5) |
+                         (color.b >> 3);
             break;
-        case nv3_pgraph_pixel_format_y8: /* i think this is just indexed mode. since r=g=b we can just take the indexed from the r */
-            packed_color = nv3_render_get_palette_index((color.r >> 2) & 0xFF);
+            
+        case 0x04: // 32bpp RGBA
+            packed_color = (color.r << 16) |
+                         (color.g << 8) |
+                         color.b;
+            if (alpha_enabled)
+                packed_color |= color.a << 24;
             break;
-        case nv3_pgraph_pixel_format_y16:
-            warning("nv3_render_downconvert: Y16 not implemented");
-            break;
+            
         default:
-            warning("nv3_render_downconvert_color unknown format %d", format);
+            packed_color = color.i16;
             break;
-
     }
 
     return packed_color;
@@ -239,15 +219,15 @@ uint32_t nv3_render_get_vram_address(nv3_coord_16_t position, nv3_grobj_t grobj)
 
     // Convert bpixel format to bytes per pixel for address calculation 
     switch (buffer_fmt) {
-        case bpixel_fmt_8bit:
-            break; // x1 multiplier
-        case bpixel_fmt_16bit:
-            vram_x = position.x << 1;
+        case 0x01: // 8bpp
             break;
-        case bpixel_fmt_32bit:
-            vram_x = position.x << 2;
+        case 0x02: // 15/16bpp
+            vram_x <<= 1;
             break;
-        default: // Y16 format and invalid formats default to 8bpp
+        case 0x04: // 32bpp
+            vram_x <<= 2;
+            break;
+        default:
             break;
     }
 
@@ -360,109 +340,42 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
     
     int32_t clip_end_x = nv3->pgraph.clip_start.x + nv3->pgraph.clip_size.x;
     int32_t clip_end_y = nv3->pgraph.clip_start.y + nv3->pgraph.clip_size.y;
-      /* Clip check */
-    if (position.x < nv3->pgraph.clip_start.x
-        || position.y < nv3->pgraph.clip_start.y
-        || position.x >= clip_end_x
-        || position.y >= clip_end_y)
-    {
-        return;
-    }
 
-    /* Chroma key test */
+    // Basic clipping 
+    if (position.x < nv3->pgraph.clip_start.x || position.x >= clip_end_x ||
+        position.y < nv3->pgraph.clip_start.y || position.y >= clip_end_y)
+        return;
+
+    // Get the address to write to
+    uint32_t vram_address = nv3_render_get_vram_address(position, grobj);
+
+    // Handle chroma key if enabled
     if (!nv3_render_chroma_test(color, grobj))
         return;
 
-    uint32_t pixel_addr_vram = nv3_render_get_vram_address(position, grobj);
-    uint32_t rop_src = 0, rop_dst = 0, rop_pattern = 0;
-    uint8_t bit = 0x00;
-
-    /* Get pattern data */
-    switch (nv3->pgraph.pattern.shape)
-    {
-        case NV3_PATTERN_SHAPE_8X8:
-            bit = (position.x & 7) | (position.y & 7) << 3;
+    // Write the pixel based on the buffer format
+    switch (buffer_fmt) {
+        case 0x01: // 8bpp
+            nv3->nvbase.svga.vram[vram_address] = color & 0xFF;
             break;
-        case NV3_PATTERN_SHAPE_1X64:
-            bit = (position.x & 0x3f);
-            break;
-        case NV3_PATTERN_SHAPE_64X1:
-            bit = (position.y & 0x3f);
-            break;
-    }
-
-    bool use_color1 = (nv3->pgraph.pattern_bitmap >> bit) & 0x01;
-
-    if (!use_color1)
-    {
-        if (!nv3->pgraph.pattern_color_0_alpha)
-            return;
-        rop_pattern = nv3_render_downconvert_color(grobj, nv3->pgraph.pattern_color_0_rgb);
-    }
-    else
-    {
-        if (!nv3->pgraph.pattern_color_1_alpha)
-            return;
-        rop_pattern = nv3_render_downconvert_color(grobj, nv3->pgraph.pattern_color_1_rgb);
-    }
-
-    switch (buffer_fmt)
-    {
-        case bpixel_fmt_8bit:
-        {
-            rop_src = color & 0xFF;
-            rop_dst = nv3->nvbase.svga.vram[pixel_addr_vram];
-            nv3->nvbase.svga.vram[pixel_addr_vram] = video_rop_gdi_ternary(nv3->pgraph.rop, rop_src, rop_dst, rop_pattern) & 0xFF;
-            nv3->nvbase.svga.changedvram[pixel_addr_vram >> 12] = changeframecount;
-            break;
-        }
-
-        case bpixel_fmt_16bit:
-        {
-            uint16_t* vram_16 = (uint16_t*)(nv3->nvbase.svga.vram);
-            pixel_addr_vram >>= 1;
             
-            rop_src = color & 0xFFFF;
-            bool is_16bpp = (nv3->pramdac.general_control >> NV3_PRAMDAC_GENERAL_CONTROL_565_MODE) & 0x01;
-
-            if (!is_16bpp && alpha_enabled)
+        case 0x02: // 15/16bpp
             {
-                bool is_transparent = !(color & 0x8000);
-                if (is_transparent)
-                {
-                    // For transparent pixels in 15-bit mode (A1R5G5B5),
-                    // XOR the pixel with the destination instead of skipping
-                    rop_dst = vram_16[pixel_addr_vram];
-                    vram_16[pixel_addr_vram] = rop_src ^ rop_dst;
-                    nv3->nvbase.svga.changedvram[pixel_addr_vram >> 11] = changeframecount;
-                    return;
-                }
+                uint16_t* vram_16 = (uint16_t*)(nv3->nvbase.svga.vram);
+                vram_16[vram_address >> 1] = color & 0xFFFF;
             }
-
-            rop_dst = vram_16[pixel_addr_vram];
-            vram_16[pixel_addr_vram] = video_rop_gdi_ternary(nv3->pgraph.rop, rop_src, rop_dst, rop_pattern) & 0xFFFF;
-            nv3->nvbase.svga.changedvram[pixel_addr_vram >> 11] = changeframecount;
             break;
-        }
-
-        case bpixel_fmt_32bit:
-        {
-            uint32_t* vram_32 = (uint32_t*)(nv3->nvbase.svga.vram);
-            pixel_addr_vram >>= 2;
-
-            rop_src = color;
-            rop_dst = vram_32[pixel_addr_vram];
-            vram_32[pixel_addr_vram] = video_rop_gdi_ternary(nv3->pgraph.rop, rop_src, rop_dst, rop_pattern);
-            nv3->nvbase.svga.changedvram[pixel_addr_vram >> 10] = changeframecount;
-            break;
-        }
-
-        case bpixel_fmt_y16:
-        default:
-            // Y16 format not implemented yet
-            nv_log("Y16 or invalid bpixel format %d", buffer_fmt);
+            
+        case 0x04: // 32bpp
+            {
+                uint32_t* vram_32 = (uint32_t*)(nv3->nvbase.svga.vram);
+                vram_32[vram_address >> 2] = color;
+            }
             break;
     }
+
+    // Mark this region as dirty for screen update
+    nv3_render_current_bpp_dfb_update(vram_address);
 }
 
 /* Current renderer, called for real-time buffer updates */
