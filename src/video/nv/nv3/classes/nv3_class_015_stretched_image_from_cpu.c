@@ -32,6 +32,15 @@ void nv3_class_015_method(uint32_t param, uint32_t method_id, nv3_ramin_context_
 {
     switch (method_id)
     {
+        case 0x0400:
+            nv3->pgraph.pattern.shape = NV3_PATTERN_SHAPE_8X8;
+            nv3->pgraph.pattern_bitmap = param;
+            break;
+        case 0x0404:
+            nv3->pgraph.pattern_color_0_rgb.r = (param >> 20) & 0x3FF;
+            nv3->pgraph.pattern_color_0_rgb.g = (param >> 10) & 0x3FF;
+            nv3->pgraph.pattern_color_0_rgb.b = param & 0x3FF;
+            break;
         default:
             warning("%s: Invalid or unimplemented method 0x%04x\n", nv3_class_names[context.class_id & 0x1F], method_id);
             nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_SOFTWARE_METHOD_PENDING);
