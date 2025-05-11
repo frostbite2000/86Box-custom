@@ -234,20 +234,21 @@ uint32_t nv3_render_get_vram_address(nv3_coord_16_t position, nv3_grobj_t grobj)
     uint32_t vram_x = position.x;
     uint32_t vram_y = position.y;
     uint32_t current_buffer = (grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_SRC_BUFFER) & 0x03; 
+    
+    // Get buffer pixel format from bpixel register
+    uint32_t buffer_fmt = (nv3->pgraph.bpixel[current_buffer] & 0x03);
 
-    uint32_t framebuffer_bpp = nv3->nvbase.svga.bpp;
-
-    // we have to multiply the x position by the number of bytes per pixel
-    switch (framebuffer_bpp)
-    {
-        case 8:
-            break;
-        case 15:
-        case 16:
+    // Convert bpixel format to bytes per pixel for address calculation 
+    switch (buffer_fmt) {
+        case bpixel_fmt_8bit:
+            break; // x1 multiplier
+        case bpixel_fmt_16bit:
             vram_x = position.x << 1;
             break;
-        case 32:
+        case bpixel_fmt_32bit:
             vram_x = position.x << 2;
+            break;
+        default: // Y16 format and invalid formats default to 8bpp
             break;
     }
 
@@ -355,8 +356,9 @@ uint32_t nv3_render_read_pixel_32(nv3_coord_16_t position, nv3_grobj_t grobj)
 void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t grobj)
 {
     bool alpha_enabled = (grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_ALPHA) & 0x01;
-    uint32_t framebuffer_bpp = nv3->nvbase.svga.bpp;
-
+    uint32_t current_buffer = (grobj.grobj_0 >> NV3_PGRAPH_CONTEXT_SWITCH_SRC_BUFFER) & 0x03;
+    uint32_t buffer_fmt = (nv3->pgraph.bpixel[current_buffer] & 0x03);
+    
     int32_t clip_end_x = nv3->pgraph.clip_start.x + nv3->pgraph.clip_size.x;
     int32_t clip_end_y = nv3->pgraph.clip_start.y + nv3->pgraph.clip_size.y;
     
@@ -406,17 +408,18 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
         rop_pattern = nv3_render_downconvert_color(grobj, nv3->pgraph.pattern_color_1_rgb);
     }
 
-    switch (framebuffer_bpp)
+    switch (buffer_fmt)
     {
-        case 8:
+        case bpixel_fmt_8bit:
+        {
             rop_src = color & 0xFF;
             rop_dst = nv3->nvbase.svga.vram[pixel_addr_vram];
             nv3->nvbase.svga.vram[pixel_addr_vram] = video_rop_gdi_ternary(nv3->pgraph.rop, rop_src, rop_dst, rop_pattern) & 0xFF;
             nv3->nvbase.svga.changedvram[pixel_addr_vram >> 12] = changeframecount;
             break;
+        }
 
-        case 15:
-        case 16:
+        case bpixel_fmt_16bit:
         {
             uint16_t* vram_16 = (uint16_t*)(nv3->nvbase.svga.vram);
             pixel_addr_vram >>= 1;
@@ -444,7 +447,7 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             break;
         }
 
-        case 32:
+        case bpixel_fmt_32bit:
         {
             uint32_t* vram_32 = (uint32_t*)(nv3->nvbase.svga.vram);
             pixel_addr_vram >>= 2;
@@ -455,5 +458,11 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
             nv3->nvbase.svga.changedvram[pixel_addr_vram >> 10] = changeframecount;
             break;
         }
+
+        case bpixel_fmt_y16:
+        default:
+            // Y16 format not implemented yet
+            nv_log("Y16 or invalid bpixel format %d", buffer_fmt);
+            break;
     }
 }
