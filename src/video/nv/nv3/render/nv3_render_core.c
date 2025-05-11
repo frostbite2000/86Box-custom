@@ -79,12 +79,11 @@ nv3_color_expanded_t nv3_render_expand_color(uint32_t color, nv3_grobj_t grobj)
             color_final.g = ((color >> 8) & 0xFF) * 4;
             color_final.b = (color & 0xFF) * 4;
 
-            break;
-        case nv3_pgraph_pixel_format_r10g10b10:
-            color_final.a = (color << 31) & 0x01;
-            color_final.r = (color << 30) & 0x3FF;
-            color_final.g = (color << 20) & 0x1FF;
-            color_final.b = (color << 10);
+            break;        case nv3_pgraph_pixel_format_r10g10b10:
+            color_final.a = (color >> 31) & 0x01;
+            color_final.r = (color >> 20) & 0x3FF;
+            color_final.g = (color >> 10) & 0x3FF;
+            color_final.b = color & 0x3FF;
 
             break;
         case nv3_pgraph_pixel_format_y8:
@@ -361,12 +360,11 @@ void nv3_render_write_pixel(nv3_coord_16_t position, uint32_t color, nv3_grobj_t
     
     int32_t clip_end_x = nv3->pgraph.clip_start.x + nv3->pgraph.clip_size.x;
     int32_t clip_end_y = nv3->pgraph.clip_start.y + nv3->pgraph.clip_size.y;
-    
-    /* Clip check */
+      /* Clip check */
     if (position.x < nv3->pgraph.clip_start.x
         || position.y < nv3->pgraph.clip_start.y
-        || position.x > clip_end_x
-        || position.y > clip_end_y)
+        || position.x >= clip_end_x
+        || position.y >= clip_end_y)
     {
         return;
     }
