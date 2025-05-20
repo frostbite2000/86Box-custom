@@ -18,7 +18,7 @@
 #pragma once
 
 /* Core */
-void nv3_render_current_bpp();
+void nv3_render_current_bpp(void);
 void nv3_render_current_bpp_dfb_8(uint32_t address);
 void nv3_render_current_bpp_dfb_16(uint32_t address);
 void nv3_render_current_bpp_dfb_32(uint32_t address);

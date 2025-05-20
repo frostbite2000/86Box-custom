@@ -603,7 +603,7 @@ void nv3_render_current_bpp_dfb_32(uint32_t address)
 
 
 /* Blit to the monitor from GPU, current bpp */
-void nv3_render_current_bpp()
+void nv3_render_current_bpp(void)
 {
     /* Figure out the Display Buffer Address from the CRTC */
 
