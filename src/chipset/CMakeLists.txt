@@ -43,6 +43,7 @@ add_library(chipset OBJECT
     intel_ich2.c
     intel_sio.c
     intel_piix.c
+    isa486c.c
     ../ioapic.c
     neat.c
     opti283.c
@@ -75,6 +76,7 @@ add_library(chipset OBJECT
     sis_5572_usb.c
     sis_5595_pmu.c
     sis_55xx.c
+    sl82c461.c
     via_vt82c49x.c
     via_vt82c505.c
     gc100.c
